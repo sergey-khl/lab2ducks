@@ -23,10 +23,16 @@ class OdometryNode(DTROS):
         encRight= f'/{self.veh_name}/right_wheel_encoder_node/tick'
         encCMD = f'/{self.veh_name}/wheels_driver_node/wheels_cmd_executed'
         twist = f'/{self.veh_name}/kinematics_node/velocity'
+
+        self.left_tick = 0
+        self.left_dir = 0
+        
+        self.right_tick = 0
+        self.right_dir = 0
         
         # Subscribing to the wheel encoders
-        #self.sub_encoder_ticks_left = rospy.Subscriber(encLeft, WheelEncoderStamped, lambda x: self.cb_encoder_data('left', x))
-        self.sub_encoder_ticks_right = rospy.Subscriber(encRight, WheelEncoderStamped, self.cb_encoder_data)
+        self.sub_encoder_ticks_left = rospy.Subscriber(encLeft, WheelEncoderStamped, lambda x: self.cb_encoder_data('left', x))
+        self.sub_encoder_ticks_right = rospy.Subscriber(encRight, WheelEncoderStamped, lambda x: self.cb_encoder_data('left', x))
         self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
         #self.sub_executed_commands = rospy.Subscriber(twist, Twist2DStamped, self.cb_executed_commands)
 
@@ -36,15 +42,36 @@ class OdometryNode(DTROS):
 
         self.log("Initialized")
 
-    def cb_encoder_data(self, wheel):
+    def cb_encoder_data(self, wheel, msg):
         """ Update encoder distance information from ticks.
         """
-        self.log(wheel)
+        if (msg == 'left'):
+            self.left_tick += (wheel.data % wheel.resolution) * self.left_dir
+        elif (msg == 'right'):
+            self.right_tick += (wheel.data % wheel.resolution) * self.right_dir
+        self.log(self.right_tick)
 
     def cb_executed_commands(self, msg):
         """ Use the executed commands to determine the direction of travel of each wheel.
         """
-        self.log(msg)
+        #self.log(msg)
+        if (msg.vel_left > 0):
+            self.left_dir = 1
+        elif (msg.vel_left < 0):
+            self.left_dir = -1
+        else:
+            self.left_dir = 0
+        if (msg.vel_right > 0):
+            self.right_dir = 1
+        elif (msg.vel_right < 0):
+            self.right_dir = -1
+        else:
+            self.right_dir = 0
+        self.log(self.right_dir)
+        self.log(msg.vel_right)
+
+        
+        
 
 if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
