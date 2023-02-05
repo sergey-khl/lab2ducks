@@ -17,8 +17,10 @@ class OdometryNode(DTROS):
         super(OdometryNode, self).__init__(node_name=node_name, node_type=NodeType.PERCEPTION)
         self.veh_name = rospy.get_namespace().strip("/")
 
-        # Get static parameters
-        self._radius = rospy.get_param(f'/{self.veh_name}/kinematics_node/radius', 100)
+        # robot wheel radius
+        self._radius = 0.0318
+        # axis to wheel
+        self._length = 0.05
         encLeft = f'/{self.veh_name}/left_wheel_encoder_node/tick'
         encRight= f'/{self.veh_name}/right_wheel_encoder_node/tick'
         encCMD = f'/{self.veh_name}/wheels_driver_node/wheels_cmd'
@@ -51,26 +53,25 @@ class OdometryNode(DTROS):
         """ Update encoder distance information from ticks.
         """
         if (wheel == 'left'):
-            self.left_tick += (msg.data-self.left_last_data)*self.left_dir
+            if (self.left_last_data != 0):
+                self.left_tick += msg.data-self.left_last_data
             self.left_last_data = msg.data
             self.dx_left = self.left_tick*self._radius*2*3.14/msg.resolution
         elif (wheel == 'right'):
-            self.right_tick += (msg.data-self.right_last_data)*self.right_dir
+            if (self.right_last_data != 0):
+                self.right_tick += msg.data-self.right_last_data
             self.right_last_data = msg.data
             self.dx_right = self.right_tick*self._radius*2*3.14/msg.resolution
-        self.log(self._radius)
-        #self.log("right" + str(self.dx_right) + "left" + str(self.dx_left))
+        self.log("left: " + str(self.log(self.dx_right)) + "   right: " + str(self.log(self.dx_left)))
         
 
 
     def cb_executed_commands(self, msg):
         """ Use the executed commands to determine the direction of travel of each wheel.
         """
-        #self.log(msg)
         if (msg.vel_left > 0):
             self.left_dir = 1
         elif (msg.vel_left < 0):
-            self.log("ISUDFIUSDFIUSDBFIUSDBF")
             self.left_dir = -1
         elif (msg.vel_left == 0):
             self.left_dir = 0
@@ -81,7 +82,7 @@ class OdometryNode(DTROS):
             self.right_dir = -1
         elif (msg.vel_right == 0):
             self.right_dir = 0
-        #self.log(self.right_dir)
+        #self.log(msg)
 
         
         
