@@ -5,6 +5,9 @@ import rospy
 from duckietown.dtros import DTROS, NodeType, TopicType, DTParam, ParamType
 from duckietown_msgs.msg import Twist2DStamped, WheelEncoderStamped, WheelsCmdStamped
 from std_msgs.msg import Header, Float32
+import gym_duckietown
+from gym_duckietown.simulator import Simulator
+
 
 class OdometryNode(DTROS):
 
