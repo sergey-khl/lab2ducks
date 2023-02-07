@@ -49,13 +49,13 @@ class OdometryNode(DTROS):
         self.sub_encoder_ticks_left = rospy.Subscriber(encLeft, WheelEncoderStamped, lambda x: self.cb_encoder_data('left', x))
         self.sub_encoder_ticks_right = rospy.Subscriber(encRight, WheelEncoderStamped, lambda x: self.cb_encoder_data('right', x))
         self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
-        #self.sub_executed_commands = rospy.Subscriber(twist, Twist2DStamped, self.cb_executed_commands)
+        self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
 
         # Publishers
         #self.pub_integrated_distance_left = rospy.Publisher(...)
         #self.pub_integrated_distance_right = rospy.Publisher(...)
         self.pub_wheels_cmd = rospy.Publisher(encCMD, WheelsCmdStamped, queue_size=1)
-
+        
         self.log("Initialized")
 
     def cb_encoder_data(self, wheel, msg):
@@ -73,28 +73,37 @@ class OdometryNode(DTROS):
             self.dx_right = self.right_tick*self._radius*2*np.pi/msg.resolution
 
         dA = (self.dx_left + self.dx_right)/(2*self._length)
-        self.robot_frame['x'] += dA*np.cos(self.robot_frame['theta'])
-        self.robot_frame['y'] += dA*np.sin(self.robot_frame['theta'])
-        self.robot_frame['theta'] += (self.dx_left - self.dx_right)/(2*self._length)
-
-        self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
-        msg_wheels_cmd = WheelsCmdStamped()
-        msg_wheels_cmd.header.stamp = msg.header.stamp
-        if ((self.dx_left + self.dx_right)/2 >= 1.24 and (self.dx_left + self.dx_right)/2 <= 1.27):
-            msg_wheels_cmd.vel_right = -0.44
-            msg_wheels_cmd.vel_left = -0.44
-            self.stage = 1
-        elif (self.stage == 0):
-            msg_wheels_cmd.vel_right = 0
-            msg_wheels_cmd.vel_left = 0
-        else:
-            msg_wheels_cmd.vel_right = -0.44
-            msg_wheels_cmd.vel_left = -0.44
-        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+        self.robot_frame['x'] = dA*np.cos(self.robot_frame['theta'])
+        self.robot_frame['y'] = dA*np.sin(self.robot_frame['theta'])
+        self.robot_frame['theta'] = (self.dx_left - self.dx_right)/(2*self._length)
 
         
 
 
+
+    def update(self):
+        rate = rospy.Rate(10) # 10Hz
+        while not rospy.is_shutdown():
+            self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
+            msg_wheels_cmd = WheelsCmdStamped()
+            #msg_wheels_cmd.header.stamp = msg.header.stamp
+            if (self.stage == 0):
+                if ((self.dx_left + self.dx_right)/2 >= 1.24 and (self.dx_left + self.dx_right)/2 <= 1.27):
+                    self.stage = 1
+                msg_wheels_cmd.vel_right = 0.44
+                msg_wheels_cmd.vel_left = 0.44
+            elif (self.stage == 1):
+                if ((self.dx_left + self.dx_right)/2 >= -0.01 and (self.dx_left + self.dx_right)/2 <= 0.03 and self.stage == 1):
+                    self.stage = 2
+                msg_wheels_cmd.vel_right = -0.44
+                msg_wheels_cmd.vel_left = -0.44
+            elif (self.stage == 2):
+                msg_wheels_cmd.vel_right = 0
+                msg_wheels_cmd.vel_left = 0
+            self.pub_wheels_cmd.publish(msg_wheels_cmd)
+            rate.sleep()
+        
+        
     def cb_executed_commands(self, msg):
         """ Use the executed commands to determine the direction of travel of each wheel.
         """
@@ -119,7 +128,6 @@ class OdometryNode(DTROS):
 
         Publishes a zero velocity command at shutdown."""
         msg_wheels_cmd = WheelsCmdStamped()
-        msg_wheels_cmd.header.stamp = msg.header.stamp
         msg_wheels_cmd.vel_right = 0
         msg_wheels_cmd.vel_left = 0
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
@@ -130,5 +138,8 @@ class OdometryNode(DTROS):
 if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
     # Keep it spinning to keep the node alive
-    rospy.spin()
-    rospy.loginfo("wheel_encoder_node is up and running...")
+    try:
+        node.update()
+        rospy.spin()
+    except rospy.ROSInterruptException:
+        pass
