@@ -65,7 +65,8 @@ class OdometryNode(DTROS):
                 self.right_tick += msg.data-self.right_last_data
             self.right_last_data = msg.data
             self.dx_right = self.right_tick*self._radius*2*3.14/msg.resolution
-        self.log("left: " + str(self.log(self.dx_right)) + "   right: " + str(self.log(self.dx_left)))
+        if ((self.dx_left + self.dx_right)/2 >= 1.24 and (self.dx_left + self.dx_right)/2 <= 1.27):
+            self.log("SDOIFHSIODFIOSD")
         
 
 
@@ -85,7 +86,6 @@ class OdometryNode(DTROS):
             self.right_dir = -1
         elif (msg.vel_right == 0):
             self.right_dir = 0
-        #self.log(msg)
 
         
         
