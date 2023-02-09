@@ -17,7 +17,7 @@ from std_msgs.msg import ColorRGBA
 hostname = os.environ['VEHICLE_NAME']
 
 
-def create_led_msg(colors: 'List[float]') -> 'LEDPattern':
+def create_led_msg(colors):
     """ Creates an led message with the colors set to values from a tuple
 
     Args:
@@ -51,19 +51,23 @@ class LEDControlNode(DTROS):
             queue_size=10,
         )
 
-        self.serv = rospy.Service('led_control_service',
-                                  LEDControlService, self.switch_led_colors)
+        # self.serv = rospy.Service('led_control_service',
+        #                           LEDControlService, self.switch_led_colors)
+        
+        self.srv_set_pattern_ = rospy.Service("~set_pattern", ChangePattern, self.srvSetPattern)
+
+
         rospy.loginfo("Started led_control_service")
         return
 
-    def switch_led_colors(self, srv: LEDControlService):
+    def switch_led_colors(self, srv: ChangePattern):
         msg = create_led_msg([srv.r, srv.g, srv.b, srv.a])
         self.pub.publish(msg)
         return 1
 
 
 if __name__ == '__main__':
-    node = LEDControlNode(node_name='led_controller')
+    node = LEDControlNode(node_name='led_controller_node')
     rospy.loginfo("Starting led controller")
 
     # #rospy.init_node('led_controls_server')
