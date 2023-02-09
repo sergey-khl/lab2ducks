@@ -65,8 +65,6 @@ class OdometryNode(DTROS):
         #self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
 
     
-        self.log("Initialized")
-
     def cb_encoder_data(self, msgLeft, msgRight):
         """ Update encoder distance information from ticks.
         """
@@ -87,7 +85,7 @@ class OdometryNode(DTROS):
         self.robot_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
         self.robot_frame['theta'] %= 2*np.pi
 
-        self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
+        #self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
         msg_wheels_cmd = WheelsCmdStamped()
         msg_wheels_cmd.header.stamp = msgLeft.header.stamp
 

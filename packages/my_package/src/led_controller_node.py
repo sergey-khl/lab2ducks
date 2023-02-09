@@ -59,7 +59,7 @@ class LEDControlNode(DTROS):
         )
 
         rospy.loginfo("Started led_control_service")
-        return
+        
 
     def switch_led_colors(self, srv: ChangePattern):
         msg = create_led_msg([srv.r, srv.g, srv.b, srv.a])
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     # rospy.wait_for_service('led_control_service')
 
     switch_led = rospy.ServiceProxy('led_control_service', ChangePattern)
-    resp1 = switch_led(0.0, 1.0, 1.0, 0.0)
+    resp1 = switch_led(0.0, 1.0, 1.0, 1.0)
     rospy.loginfo(f"Got response: {resp1}")
 
     # rate = rospy.Rate(1)
