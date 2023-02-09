@@ -1,5 +1,5 @@
 <package format="2">
-  <name>led_controls</name>
+  <name>my_package</name>
   <version>1.0.0</version>
   <description>
     Controls the color of the leds as a service
