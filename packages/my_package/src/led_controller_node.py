@@ -7,7 +7,8 @@ import rospy
 import time
 
 #from beginner_tutorials.srv import AddTwoInts,AddTwoIntsResponse
-from led_controls.srv import LEDControlService, LEDControlServiceResponse
+#from led_controls.srv import LEDControlService, LEDControlServiceResponse
+from LEDService.srv import LEDControlService, LEDControlServiceResponse
 
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import LEDPattern
@@ -23,7 +24,7 @@ def create_led_msg(colors: 'List[float]') -> 'LEDPattern':
         Colors (list[float]): A list of 3 floats in the order rgb
     """
     led_msg = LEDPattern()
-    
+
     for i in range(5):
         rgba = ColorRGBA()
         rgba.r = colors[0]
