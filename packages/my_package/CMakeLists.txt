@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   DIRECTORY srv
   FILES
-  LEDControlService.srv
+  LEDService.srv
 )
 
 catkin_package()
