@@ -9,7 +9,7 @@ from std_msgs.msg import ColorRGBA
 
 from duckietown.dtros import DTROS, TopicType, NodeType
 
-class LEDNode(DTROS):
+class LEDController(DTROS):
 
     def __init__(self, node_name):
 

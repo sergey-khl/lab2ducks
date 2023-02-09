@@ -4,7 +4,7 @@ import numpy as np
 import os
 import rospy
 
-from duckietown_msgs.msg import  WheelEncoderStamped, WheelsCmdStamped, Twist2DStamped,
+from duckietown_msgs.msg import  WheelEncoderStamped, WheelsCmdStamped, Twist2DStamped
 from std_msgs.msg import Header, Float32
 import message_filters
 
