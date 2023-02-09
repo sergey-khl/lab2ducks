@@ -61,7 +61,7 @@ class LEDControlNode(DTROS):
 
 
         self.LEDspattern = [[1, 1, 1]] * 5
-
+        self.changePattern("WHITE")
 
         rospy.loginfo("Started led_control_service")
         
