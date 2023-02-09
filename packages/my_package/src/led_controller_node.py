@@ -8,7 +8,7 @@ import time
 
 #from beginner_tutorials.srv import AddTwoInts,AddTwoIntsResponse
 #from led_controls.srv import LEDControlService, LEDControlServiceResponse
-from LEDService.srv import LEDControlService, LEDControlServiceResponse
+from duckietown_msgs.srv import ChangePattern, ChangePatternResponse
 
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import LEDPattern
