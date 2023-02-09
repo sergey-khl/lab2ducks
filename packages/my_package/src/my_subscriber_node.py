@@ -27,6 +27,7 @@ class OdometryNode(DTROS):
 
         # axis to wheel
         self._length = 0.05
+
         encLeft = f'/{self.veh_name}/left_wheel_encoder_node/tick'
         encRight= f'/{self.veh_name}/right_wheel_encoder_node/tick'
         encCMD = f'/{self.veh_name}/wheels_driver_node/wheels_cmd'
@@ -59,6 +60,7 @@ class OdometryNode(DTROS):
         self.sub_encoder_ticks_right = message_filters.Subscriber(encRight, WheelEncoderStamped)
         self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer([self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 10, 0.1, allow_headerless=True)
         self.sub_encoder_ticks.registerCallback(self.cb_encoder_data)
+
         #self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
         #self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
 
@@ -88,6 +90,7 @@ class OdometryNode(DTROS):
         self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
         msg_wheels_cmd = WheelsCmdStamped()
         msg_wheels_cmd.header.stamp = msgLeft.header.stamp
+
         if (self.stage == 0):
             if (self.circle_remain == 0):
                 self.circle_remain = 2*np.pi*0.7
@@ -96,6 +99,7 @@ class OdometryNode(DTROS):
             self.move_backward(msg_wheels_cmd)
         elif (self.stage == 2):
             self.stop_being_silly(msg_wheels_cmd)
+
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
     # move to position relative to robot
@@ -105,12 +109,15 @@ class OdometryNode(DTROS):
                 msg_wheels_cmd.vel_right = 0
                 msg_wheels_cmd.vel_left = 0
                 return
+        
         if (self.robot_frame['y'] > 0.01):
             msg_wheels_cmd.vel_right = 0.35
             msg_wheels_cmd.vel_left = 0.4
+
         elif (self.robot_frame['y'] < -0.01):
             msg_wheels_cmd.vel_right = 0.4
             msg_wheels_cmd.vel_left = 0.35
+
         else:
             msg_wheels_cmd.vel_right = 0.4
             msg_wheels_cmd.vel_left = 0.4
@@ -121,12 +128,15 @@ class OdometryNode(DTROS):
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
             return
+        
         if (self.robot_frame['y'] > 0.01):
             msg_wheels_cmd.vel_right = -0.35
             msg_wheels_cmd.vel_left = -0.4
+
         elif (self.robot_frame['y'] < -0.01):
             msg_wheels_cmd.vel_right = -0.4
             msg_wheels_cmd.vel_left = -0.35
+
         else:
             msg_wheels_cmd.vel_right = -0.4
             msg_wheels_cmd.vel_left = -0.4
@@ -152,6 +162,7 @@ class OdometryNode(DTROS):
             msg_wheels_cmd.vel_left = 0
             self.circle_remain = 0
             return
+        
         msg_wheels_cmd.vel_right = 0.3
         msg_wheels_cmd.vel_left = 0.18
         self.circle_remain -= self.dx_right

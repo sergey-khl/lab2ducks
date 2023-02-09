@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
-import time
 import rospy
+import os
+import numpy as np
+import rosbag
+import rospy
+import time
 
-from duckietown_msgs.srv import SetCustomLEDPattern, ChangePattern
-from duckietown_msgs.srv import SetCustomLEDPatternResponse, ChangePatternResponse
+#from beginner_tutorials.srv import AddTwoInts,AddTwoIntsResponse
+from led_controls.srv import LEDControlService, LEDControlServiceResponse
+
+from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import LEDPattern
 from std_msgs.msg import ColorRGBA
 
-from duckietown.dtros import DTROS, TopicType, NodeType
+hostname = os.environ['VEHICLE_NAME']
 
 class LEDController(DTROS):
 
@@ -73,6 +79,17 @@ class LEDController(DTROS):
             self.log("Pattern changed to (%r)" % (pattern_name))
 
         return
+
+    # https://github.com/duckietown/dt-core/blob/daffy/packages/led_emitter/src/led_emitter_node.py
+    def on_shutdown(self):
+        """Shutdown procedure.
+        At shutdown, changes the LED pattern to `LIGHT_OFF`.
+        """
+        # Turn off the lights when the node dies
+        self.loginfo("Shutting down. Turning LEDs off.")
+        self.changePattern("LIGHT_OFF")
+        time.sleep(1)
+
 
 if __name__ == "__main__":
     # Create the LEDNode object 
