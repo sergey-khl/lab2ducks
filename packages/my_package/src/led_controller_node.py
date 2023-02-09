@@ -48,9 +48,6 @@ class LEDControlNode(DTROS):
             LEDPattern,
             queue_size=10,
         )
-
-        # self.serv = rospy.Service('led_control_service',
-        #                           LEDControlService, self.switch_led_colors)
         
         self.serv = rospy.Service(
             f'/{hostname}/led_emitter_node/set_pattern', 
@@ -62,6 +59,7 @@ class LEDControlNode(DTROS):
         
 
     def switch_led_colors(self, srv: ChangePattern):
+        rospy.loginfo(srv.r)
         msg = create_led_msg([srv.r, srv.g, srv.b, srv.a])
         self.pub.publish(msg)
         return 1
@@ -80,9 +78,9 @@ if __name__ == '__main__':
 
     # rospy.wait_for_service('led_control_service')
 
-    switch_led = rospy.ServiceProxy('led_control_service', ChangePattern)
-    resp1 = switch_led(0.0, 1.0, 1.0, 1.0)
-    rospy.loginfo(f"Got response: {resp1}")
+    # switch_led = rospy.ServiceProxy('led_control_service', ChangePattern)
+    # resp1 = switch_led(0.0, 1.0, 1.0, 1.0)
+    # rospy.loginfo(f"Got response: {resp1}")
 
     # rate = rospy.Rate(1)
 
