@@ -80,9 +80,9 @@ if __name__ == '__main__':
 
     # rospy.wait_for_service('led_control_service')
 
-    # switch_led = rospy.ServiceProxy('led_control_service', LEDControlService)
-    # resp1 = switch_led(0.0, 1.0, 1.0, 0.0)
-    # rospy.loginfo(f"Got response: {resp1}")
+    switch_led = rospy.ServiceProxy('led_control_service', ChangePattern)
+    resp1 = switch_led(0.0, 1.0, 1.0, 0.0)
+    rospy.loginfo(f"Got response: {resp1}")
 
     # rate = rospy.Rate(1)
 
