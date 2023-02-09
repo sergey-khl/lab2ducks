@@ -7,10 +7,6 @@
   <maintainer email="sergeykhlynovskiy@gmail.com">sergey khlynovskiy</maintainer>
   <license>GPL3</license>
 
-
-  <!-- <build_depend>message_generation</build_depend>
-  <exec_depend>message_runtime</exec_depend> -->
-
   <buildtool_depend>catkin</buildtool_depend>
 
 </package>

@@ -6,8 +6,6 @@ import rosbag
 import rospy
 import time
 
-#from beginner_tutorials.srv import AddTwoInts,AddTwoIntsResponse
-#from led_controls.srv import LEDControlService, LEDControlServiceResponse
 from duckietown_msgs.srv import ChangePattern, ChangePatternResponse
 
 from duckietown.dtros import DTROS, NodeType
@@ -54,8 +52,11 @@ class LEDControlNode(DTROS):
         # self.serv = rospy.Service('led_control_service',
         #                           LEDControlService, self.switch_led_colors)
         
-        self.srv_set_pattern_ = rospy.Service("~set_pattern", ChangePattern, self.srvSetPattern)
-
+        self.serv = rospy.Service(
+            f'/{hostname}/led_emitter_node/set_pattern', 
+            ChangePattern, 
+            self.switch_led_colors
+        )
 
         rospy.loginfo("Started led_control_service")
         return
