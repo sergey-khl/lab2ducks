@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
+
 import numpy as np
 import os
 import rospy
-from duckietown.dtros import DTROS, NodeType, TopicType, DTParam, ParamType
-from duckietown_msgs.msg import Twist2DStamped, WheelEncoderStamped, WheelsCmdStamped
+
+from duckietown_msgs.msg import  WheelEncoderStamped, WheelsCmdStamped, Twist2DStamped,
 from std_msgs.msg import Header, Float32
 import message_filters
+
+from duckietown.dtros import DTROS, NodeType, TopicType, DTParam, ParamType
 
 
 class OdometryNode(DTROS):
@@ -21,6 +24,7 @@ class OdometryNode(DTROS):
 
         # robot wheel radius
         self._radius = 0.0318
+
         # axis to wheel
         self._length = 0.05
         encLeft = f'/{self.veh_name}/left_wheel_encoder_node/tick'
@@ -47,10 +51,10 @@ class OdometryNode(DTROS):
 
         self.stage = 0
 
-        # Publishers
+        # Setup publishers
         self.pub_wheels_cmd = rospy.Publisher(encCMD, WheelsCmdStamped, queue_size=1)
         
-        # Subscribing to the wheel encoders
+        # Setup subscribers
         self.sub_encoder_ticks_left = message_filters.Subscriber(encLeft, WheelEncoderStamped)
         self.sub_encoder_ticks_right = message_filters.Subscriber(encRight, WheelEncoderStamped)
         self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer([self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 10, 0.1, allow_headerless=True)
