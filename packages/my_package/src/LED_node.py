@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
-
+import time
 import rospy
 
-from duckietown_msg.srv import SetCustomLEDPattern, ChangePattern
+from duckietown_msgs.srv import SetCustomLEDPattern, ChangePattern
 from duckietown_msgs.srv import SetCustomLEDPatternResponse, ChangePatternResponse
-from duckietown.msgs.msg import LEDPattern
-from std_msgs.msg import ColorRGBA 
+from duckietown_msgs.msg import LEDPattern
+from std_msgs.msg import ColorRGBA
 
-from duckietown.dtros import DTROS, NodeType, TopicType, DTParam, ParamType
-
+from duckietown.dtros import DTROS, TopicType, NodeType
 
 class LEDNode(DTROS):
 
