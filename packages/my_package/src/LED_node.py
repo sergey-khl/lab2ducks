@@ -23,7 +23,6 @@ class LEDNode(DTROS):
 
         self._LED_protocol = rospy.get_param("~LED_protocol")
 
-        self.pattern = [[0,0,0]] * 5
         self.current_pattern_name = "LIGHT_OFF"
         self.changePattern(self.current_pattern_name)
 
@@ -33,13 +32,12 @@ class LEDNode(DTROS):
         )
 
         # -- Service -- 
-
         self.srv_set_pattern = rospy.Service(
             "~set_pattern", ChangePattern, self.srvSetPattern
         )
 
-
         self.changePattern("WHITE")
+
         self.log("lights activated!")
 
 
@@ -52,27 +50,33 @@ class LEDNode(DTROS):
             rgba.b = self.LEDspattern[i][2]
             rgba.a = 1.0
             LEDPattern_msg.rgb_vals.append(rgba)
+
         self.pub_leds.publish(LEDPattern_msg)
+
+
+    def updateLEDs(self):
+        for i in range(5):
+            self.LEDspattern[i] = self.pattern[i]
+
+        self.publishLEDs()
 
 
     def changePattern(self, pattern_name):
         if pattern_name:
-            if self.current_pattern_name == pattern_name and pattern_name != "custom":
-                return 
-            elif pattern_name.strip("'").strip('"') in self._LED_protocol["signals"]:
-                self.current_pattern_name = pattern_name
+            self.current_pattern_name = pattern_name
 
             color_list = self._LED_protocol["signals"][pattern_name]["color_list"]
 
-            if type(color_list) is str:
-                self.pattern = [self._LED_protocol["colors"][color_list]]*5
+            self.pattern = [self._LED_protocol['colors'][color_list]] * 5 
 
-            self.frequency_mask = self._LED_protocol["signals"][pattern_name]["frequency_mask"]
-            self.frequency = self._LED_protocol["signals"][pattern_name]["frequency"]
+            self.updateLEDs()
 
-            if self.frequency == 0:
-                self.updateLEDs()
+            self.log("Pattern changed to (%r)" % (pattern_name))
 
-            self.log("Pattern changed to (%r), cycles: %s " % (pattern_name, self.frequency))
+        return
 
-    
+if __name__ == "__main__":
+    # Create the LEDNode object 
+    led_node = LEDNode(node_name='led_emitter')
+    # keep is spinning to keep it alive
+    rospy.spin()
