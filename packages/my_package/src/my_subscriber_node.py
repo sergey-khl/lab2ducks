@@ -67,9 +67,6 @@ class OdometryNode(DTROS):
         #self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
         #self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
 
-    def Change_color(self):
-
-
     
     def cb_encoder_data(self, msgLeft, msgRight):
         """ Update encoder distance information from ticks.
