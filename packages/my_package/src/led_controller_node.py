@@ -59,7 +59,7 @@ class LEDControlNode(DTROS):
         
 
     def switch_led_colors(self, srv: ChangePattern):
-        rospy.loginfo(srv.r)
+        self.log(srv.r)
         msg = create_led_msg([srv.r, srv.g, srv.b, srv.a])
         self.pub.publish(msg)
         return 1
