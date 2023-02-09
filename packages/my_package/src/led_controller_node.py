@@ -34,6 +34,7 @@ def create_led_msg(colors):
     return led_msg
 
 
+
 class LEDControlNode(DTROS):
     """
     Switches the led color?
@@ -42,6 +43,9 @@ class LEDControlNode(DTROS):
         super(LEDControlNode, self).__init__(
             node_name=node_name, node_type=NodeType.CONTROL
         )
+
+        self.LEDspattern = [[0.0, 0.0, 0.0]] * 5
+
 
         self.pub = rospy.Publisher(
             f'/{hostname}/led_emitter_node/led_pattern',
@@ -57,14 +61,25 @@ class LEDControlNode(DTROS):
 
 
         self.LEDspattern = [[1, 1, 1]] * 5
-        srv = create_led_msg(self.LEDspattern)
-        self.switch_led_colors(srv)
+
 
         rospy.loginfo("Started led_control_service")
         
 
+    def publishLEDs(self, srv: ChangePattern):
+        LEDPattern_msg = LEDPattern()
+        for i in range(5):
+            rgba = ColorRGBA()
+            rgba.r = self.LEDspattern[i][0]
+            rgba.g = self.LEDspattern[i][1]
+            rgba.b = self.LEDspattern[i][2]
+            rgba.a = 1.0
+            LEDPattern_msg.rgb_vals.append(rgba)
+        self.pub_leds.publish(LEDPattern_msg)
+
+
     def switch_led_colors(self, srv: ChangePattern):
-        self.log(srv.r)
+        self.log(srv)
         msg = create_led_msg([srv.r, srv.g, srv.b, srv.a])
         self.pub.publish(msg)
         return 1
