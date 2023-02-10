@@ -32,13 +32,13 @@ class LEDNode(DTROS):
 
         # Proxies
         self.setCustomPattern = rospy.ServiceProxy(
-            "/{}/led_emitter_node/set_custom_pattern".format(self.veh_name),
-              SetCustomLEDPattern
+            f'/{self.veh_name}/led_emitter_node/set_custom_pattern',
+            SetCustomLEDPattern
         )
 
         # Publishers
         self.pub_leds = rospy.Publisher(
-            f'/{self.veh_name}/led_controller_node/led_pattern',
+            "~led_pattern",
             LEDPattern, 
             queue_size=1, 
             dt_topic_type=TopicType.DRIVER
