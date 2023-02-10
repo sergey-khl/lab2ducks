@@ -74,7 +74,7 @@ class OdometryNode(DTROS):
                                     LEDPattern, queue_size=1)
 
         # Proxy
-        led_service = '/{}/led_emitter_node/led_pattern'.format(self.veh_name)
+        led_service = '/{}/led_controller_node/led_pattern'.format(self.veh_name)
         rospy.wait_for_service(led_service)
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
     
