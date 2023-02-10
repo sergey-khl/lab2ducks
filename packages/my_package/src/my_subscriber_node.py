@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
+
 import numpy as np
-import os
+import time
 import rospy
-from duckietown.dtros import DTROS, NodeType, TopicType, DTParam, ParamType
-from duckietown_msgs.msg import Twist2DStamped, WheelEncoderStamped, WheelsCmdStamped
-from std_msgs.msg import Header, Float32
+import rosbag
+
+from duckietown.dtros import DTROS, NodeType
+from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPattern
+from std_msgs.msg import Header, String
+from duckietown_msgs.srv import ChangePattern
 import message_filters
 
 
@@ -65,6 +69,15 @@ class OdometryNode(DTROS):
         #self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
         #self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
 
+
+        self.led = rospy.Publisher(f'/{self.veh_name}/led_emitter_node/led_pattern',
+                                    LEDPattern, queue_size=1)
+
+        # Proxy
+        led_service = '/{}/led_node/led_pattern'.format(self.veh_name)
+        rospy.wait_for_service(led_service)
+        self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
+
     
         self.log("Initialized")
 
@@ -101,7 +114,23 @@ class OdometryNode(DTROS):
         if self.dist_remain > 0:
             self.dist_remain -= self.dx_right
 
-        
+    def change_led_lights(self, color: str):
+        '''
+        Sends msg to service server
+        Colors:
+            "off": [0,0,0],
+            "white": [1,1,1],
+            "green": [0,1,0],
+            "red": [1,0,0],
+            "blue": [0,0,1],
+            "yellow": [1,0.8,0],
+            "purple": [1,0,1],
+            "cyan": [0,1,1],
+            "pink": [1,0,0.5],
+        '''
+        msg = String()
+        msg.data = color
+        self.led_pattern(msg)
         
         
     def cb_executed_commands(self, msg):
@@ -109,6 +138,8 @@ class OdometryNode(DTROS):
         self.right_dir = 1 if msg.vel_right > 0 else -1
 
     def run(self, rate):
+        self.change_led_lights('red')
+        
         while not self.is_shutdown:
             #self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
             self.log(str(self.global_frame['x']) + "   " + str(self.global_frame['y']) + "   " + str(self.global_frame['theta']))
