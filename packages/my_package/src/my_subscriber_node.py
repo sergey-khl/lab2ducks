@@ -304,8 +304,10 @@ class OdometryNode(DTROS):
 
 if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
+    rate = rospy.Rate(30)
+    node.run(rate)
 
-    rospy.spin()
+    #rospy.spin()
 
     # # Keep it spinning to keep the node alive
     
