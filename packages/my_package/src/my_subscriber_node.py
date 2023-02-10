@@ -89,24 +89,50 @@ class OdometryNode(DTROS):
         msg_wheels_cmd = WheelsCmdStamped()
         msg_wheels_cmd.header.stamp = msgLeft.header.stamp
 
+        #wait 
         if (self.stage == 0):
-            if (self.circle_remain == 0):
-                self.circle_remain = 2*np.pi*0.7
-            self.go_circle(msg_wheels_cmd)
+            self.stop_being_silly(msg_wheels_cmd, 1, 1/5)
+        # box movement
         elif (self.stage == 1):
-            self.move_backward(msg_wheels_cmd)
+            self.rotate(msg_wheels_cmd, 2, 3*np.pi/2)
         elif (self.stage == 2):
-            self.stop_being_silly(msg_wheels_cmd)
-
-        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+            self.move_forward(msg_wheels_cmd, 3)
+        elif (self.stage == 3):
+            self.rotate(msg_wheels_cmd, 4, np.pi/2)
+        elif (self.stage == 4):
+            self.move_forward(msg_wheels_cmd, 5)
+        elif (self.stage == 5):
+            self.rotate(msg_wheels_cmd, 6, np.pi/2)
+        elif (self.stage == 6):
+            self.move_forward(msg_wheels_cmd, 7)
+        #wait
+        elif (self.stage == 7):
+            self.stop_being_silly(msg_wheels_cmd, 8, 1/5)
+        # go back to original pos
+        elif (self.stage == 8):
+            self.rotate(msg_wheels_cmd, 9, np.pi/2)
+        elif (self.stage == 9):
+            self.move_forward(msg_wheels_cmd, 10)
+        # go back to original orientation
+        elif (self.stage == 10):
+            self.rotate(msg_wheels_cmd, 11, np.pi/2)
+        elif (self.stage == 11):
+            self.rotate(msg_wheels_cmd, 12, np.pi/2)
+        #wait
+	    elif (self.stage == 12):
+      	    self.stop_being_silly(msg_wheels_cmd, 13, 1/5)
+        # clockwise rotate
+	    elif (self.stage == 13):
+            self.go_circle(msg_wheels_cmd, 14)
+            self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
     # move to position relative to robot
-    def move_forward(self, msg_wheels_cmd):
+    def move_forward(self, msg_wheels_cmd, next_stage):
         if (self.robot_frame['x'] >= 1.23 and self.robot_frame['x'] <= 1.27):
-                self.stage = 1
-                msg_wheels_cmd.vel_right = 0
-                msg_wheels_cmd.vel_left = 0
-                return
+            self.stage = next_stage
+            msg_wheels_cmd.vel_right = 0
+            msg_wheels_cmd.vel_left = 0
+            return
         
         if (self.robot_frame['y'] > 0.01):
             msg_wheels_cmd.vel_right = 0.35
@@ -120,9 +146,9 @@ class OdometryNode(DTROS):
             msg_wheels_cmd.vel_right = 0.4
             msg_wheels_cmd.vel_left = 0.4
 
-    def move_backward(self, msg_wheels_cmd):
+    def move_backward(self, msg_wheels_cmd, next_stage):
         if (self.robot_frame['x'] >= -0.02 and self.robot_frame['x'] <= 0.01):
-            self.stage = 2
+            self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
             return
@@ -139,13 +165,17 @@ class OdometryNode(DTROS):
             msg_wheels_cmd.vel_right = -0.4
             msg_wheels_cmd.vel_left = -0.4
         
-    def stop_being_silly(self, msg_wheels_cmd):
-        msg_wheels_cmd.vel_right = 0
-        msg_wheels_cmd.vel_left = 0
+    def stop_being_silly(self, msg_wheels_cmd, next_stage, hz):
+        self.log('starting wait')
+    	rate = rospy.Rate(hz) # 1Hz
+        rate.sleep()
+        self.log('done wait')
+    	self.stage = next_stage
+        
 
-    def rotate(self, msg_wheels_cmd):
-        if (self.robot_frame['theta'] >= 3*np.pi/2-0.2 and self.robot_frame['theta'] <= 3*np.pi/2+0.2):
-            self.stage = 1
+    def rotate(self, msg_wheels_cmd, next_stage, deg):
+        if (self.robot_frame['theta'] >= deg-0.2 and self.robot_frame['theta'] <= deg+0.2):
+            self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
             return
@@ -153,16 +183,18 @@ class OdometryNode(DTROS):
         msg_wheels_cmd.vel_right = -0.15
         msg_wheels_cmd.vel_left = 0.15
 
-    def go_circle(self, msg_wheels_cmd):
+    def go_circle(self, msg_wheels_cmd, next_stage):
+    	if (self.circle_remain == 0):
+            self.circle_remain = 2*np.pi*0.7
         if (self.circle_remain >= -0.1 and self.circle_remain <= 0.2):
-            self.stage = 2
+            self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
             self.circle_remain = 0
             return
         
-        msg_wheels_cmd.vel_right = 0.3
-        msg_wheels_cmd.vel_left = 0.18
+        msg_wheels_cmd.vel_right = 0.18
+        msg_wheels_cmd.vel_left = 0.3
         self.circle_remain -= self.dx_right
         
 
