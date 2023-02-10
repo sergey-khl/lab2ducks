@@ -32,17 +32,24 @@ class LEDNode(DTROS):
 
         # Proxies
         self.setCustomPattern = rospy.ServiceProxy(
-            "/{}/led_emitter_node/set_custom_pattern".format(self.veh_name), SetCustomLEDPattern)
+            "/{}/led_emitter_node/set_custom_pattern".format(self.veh_name),
+              SetCustomLEDPattern
+        )
 
         # Publishers
         self.pub_leds = rospy.Publisher(
-            "~led_pattern", LEDPattern, queue_size=1, dt_topic_type=TopicType.DRIVER)
+            f'/{self.veh_name}/led_controller_node/led_pattern',
+            LEDPattern, 
+            queue_size=1, 
+            dt_topic_type=TopicType.DRIVER
+        )
 
         # Servers
         self.server = rospy.Service(
-            '/{}/led_controller_node/led_pattern'.format(self.veh_name), 
+            f'/{self.veh_name}/led_controller_node/led_pattern', 
             ChangePattern, 
-            self.handle_change_led_msg)
+            self.handle_change_led_msg
+        )
 
         self.colors = {
             "off": [0, 0, 0],
