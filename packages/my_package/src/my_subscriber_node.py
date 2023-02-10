@@ -78,7 +78,7 @@ class OdometryNode(DTROS):
         rospy.wait_for_service(led_service)
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
 
-        #self.change_led_lights('white')
+        self.change_led_lights('white')
 
     
         self.log("Initialized")
