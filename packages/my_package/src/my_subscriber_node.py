@@ -77,6 +77,9 @@ class OdometryNode(DTROS):
         led_service = '/{}/led_controller_node/led_pattern'.format(self.veh_name)
         rospy.wait_for_service(led_service)
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
+
+        self.change_led_lights('white')
+
     
         self.log("Initialized")
 
@@ -137,7 +140,6 @@ class OdometryNode(DTROS):
         self.right_dir = 1 if msg.vel_right > 0 else -1
 
     def run(self, rate):
-        self.change_led_lights('red')
 
         while not self.is_shutdown:
             #self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
@@ -304,7 +306,7 @@ if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
 
     rospy.spin()
-    
+
     # # Keep it spinning to keep the node alive
     
     # #rospy.spin()
