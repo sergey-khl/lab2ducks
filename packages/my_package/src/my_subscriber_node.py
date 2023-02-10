@@ -43,7 +43,14 @@ class OdometryNode(DTROS):
             'theta': 0
         }
 
-        self.circle_remain = 0
+        self.global_frame = {
+            'x': 0.32,
+            'y': 0.32,
+            'theta': 0
+        }
+
+        self.dist_remain = 0
+        self.ang_remain = 0
 
         self.stage = 0
 
@@ -76,29 +83,51 @@ class OdometryNode(DTROS):
 
         dA = (self.dx_left + self.dx_right)/2
         
-        self.robot_frame['x'] += dA*np.cos(self.robot_frame['theta'])
-        self.robot_frame['y'] += dA*np.sin(self.robot_frame['theta'])
-        self.robot_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
+        self.robot_frame['x'] = dA
+        self.robot_frame['y'] = 0
+        self.robot_frame['theta'] = (self.dx_right - self.dx_left)/(2*self._length)
+
+        if self.ang_remain > 0:
+            self.ang_remain -= np.abs(self.robot_frame['theta'])
+
         self.robot_frame['theta'] %= 2*np.pi
+
+
+        self.global_frame['x'] += dA*np.cos(self.global_frame['theta'])
+        self.global_frame['y'] += dA*np.sin(self.global_frame['theta'])
+        self.global_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
+        self.global_frame['theta'] %= 2*np.pi
+
+        if self.dist_remain > 0:
+            self.dist_remain -= self.dx_right
+
         
+        
+        
+    def cb_executed_commands(self, msg):
+        self.left_dir = 1 if msg.vel_left > 0 else -1
+        self.right_dir = 1 if msg.vel_right > 0 else -1
 
     def run(self, rate):
         while not self.is_shutdown:
-            self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
+            #self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
+            self.log(str(self.global_frame['x']) + "   " + str(self.global_frame['y']) + "   " + str(self.global_frame['theta']))
             #wait 
             if (self.stage == 0):
+                #self.do_nothing()
                 self.stop_being_silly(1, 1/5)
                 # box movement
             elif (self.stage == 1):
-                self.rotate(2, 3*np.pi/2)
+                self.rotate(2, 'cw')
             elif (self.stage == 2):
                 self.move_forward(3)
             elif (self.stage == 3):
-                self.rotate(4, np.pi/2)
+                self.rotate(4, 'ccw')
+
             elif (self.stage == 4):
                 self.move_forward(5)
             elif (self.stage == 5):
-                self.rotate(6, np.pi/2)
+                self.rotate(6, 'ccw')
             elif (self.stage == 6):
                 self.move_forward(7)
                 #wait
@@ -106,14 +135,14 @@ class OdometryNode(DTROS):
                 self.stop_being_silly(8, 1/5)
                 # go back to original pos
             elif (self.stage == 8):
-                self.rotate(9, np.pi/2)
+                self.rotate(9, 'ccw')
             elif (self.stage == 9):
                 self.move_forward(10)
                 # go back to original orientation
             elif (self.stage == 10):
-                self.rotate(11, np.pi/2)
+                self.rotate(11, 'cw')
             elif (self.stage == 11):
-                self.rotate(12, np.pi/2)
+                self.rotate(12, 'cw')
             elif (self.stage == 12):
                 self.stop_being_silly(13, 1/5)
             elif (self.stage == 13):
@@ -126,24 +155,26 @@ class OdometryNode(DTROS):
     def move_forward(self, next_stage):
         self.log('going forward')
         msg_wheels_cmd = WheelsCmdStamped()
-        if (self.robot_frame['x'] >= 1.00 and self.robot_frame['x'] <= 1.05):
+        if (self.dist_remain == 0):
+            self.dist_remain = 1.25
+        if (self.dist_remain >= -0.1 and self.dist_remain <= 0.2):
             self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
+            self.dist_remain = 0
             self.log('done moving forward')
         else:
-            if (self.robot_frame['y'] > 0.05):
-                self.log('too left')
-                msg_wheels_cmd.vel_right = 0.4
-                msg_wheels_cmd.vel_left = 0.3
-            elif (self.robot_frame['y'] < -0.05):
-                self.log('too right')
-                msg_wheels_cmd.vel_right = 0.3
-                msg_wheels_cmd.vel_left = 0.4
-            else:
-                msg_wheels_cmd.vel_right = 0.4
-                msg_wheels_cmd.vel_left = 0.4
-
+            # if (self.robot_frame['y'] > 0.05):
+            #     self.log('too left')
+            #     msg_wheels_cmd.vel_right = 0.4
+            #     msg_wheels_cmd.vel_left = 0.3
+            # elif (self.robot_frame['y'] < -0.05):
+            #     self.log('too right')
+            #     msg_wheels_cmd.vel_right = 0.3
+            #     msg_wheels_cmd.vel_left = 0.4
+            # else:
+            msg_wheels_cmd.vel_right = 0.4
+            msg_wheels_cmd.vel_left = 0.4
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
     def move_backward(self, next_stage):
@@ -166,6 +197,9 @@ class OdometryNode(DTROS):
                 msg_wheels_cmd.vel_right = -0.4
                 msg_wheels_cmd.vel_left = -0.4
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
+
+    def do_nothing(self):
+        pass
         
     def stop_being_silly(self, next_stage, hz):
         msg_wheels_cmd = WheelsCmdStamped()
@@ -182,38 +216,42 @@ class OdometryNode(DTROS):
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
         
 
-    def rotate(self, next_stage, deg):
+    def rotate(self, next_stage, dir):
         self.log('start rotate')
         msg_wheels_cmd = WheelsCmdStamped()
-        if (self.robot_frame['theta'] >= deg-0.2 and self.robot_frame['theta'] <= deg+0.2):
+        self.log(self.ang_remain)
+        if (self.ang_remain == 0):
+            self.ang_remain = np.pi/2
+        if (self.ang_remain <= 0.15):
             self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
+            self.ang_remain = 0
             self.log('done rotating')
         else:
-            if (deg < np.pi):
-                msg_wheels_cmd.vel_right = 0.45
-                msg_wheels_cmd.vel_left = -0.45
+            if (dir == 'ccw'):
+                msg_wheels_cmd.vel_right = 0.4
+                msg_wheels_cmd.vel_left = -0.4
             else:
-                msg_wheels_cmd.vel_right = -0.45
-                msg_wheels_cmd.vel_left = 0.45
+                msg_wheels_cmd.vel_right = -0.4
+                msg_wheels_cmd.vel_left = 0.4
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
     def go_circle(self, next_stage):
         self.log('start circle')
         msg_wheels_cmd = WheelsCmdStamped()
-        if (self.circle_remain == 0):
-            self.circle_remain = 2*np.pi*0.7
-        if (self.circle_remain >= -0.1 and self.circle_remain <= 0.2):
+        if (self.dist_remain == 0):
+            self.dist_remain = 2*np.pi*0.7
+        if (self.dist_remain >= -0.1 and self.dist_remain <= 0.2):
             self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
-            self.circle_remain = 0
+            self.dist_remain = 0
             self.log('done with circle')
         else:
-            msg_wheels_cmd.vel_right = 0.18
-            msg_wheels_cmd.vel_left = 0.3
-            self.circle_remain -= self.dx_right
+            msg_wheels_cmd.vel_right = 0.3
+            msg_wheels_cmd.vel_left = 0.5
+            
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
         
 
