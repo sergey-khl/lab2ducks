@@ -55,33 +55,32 @@ class OdometryNode(DTROS):
 
         self.dist_remain = 0
         self.ang_remain = 0
-
         self.stage = 0
 
         # Publishers
         self.pub_wheels_cmd = rospy.Publisher(encCMD, WheelsCmdStamped, queue_size=1)
+        self.led = rospy.Publisher(f'/{self.veh_name}/led_emitter_node/led_pattern',
+                                    LEDPattern, queue_size=1)
         
         # Subscribing to the wheel encoders
         self.sub_encoder_ticks_left = message_filters.Subscriber(encLeft, WheelEncoderStamped)
         self.sub_encoder_ticks_right = message_filters.Subscriber(encRight, WheelEncoderStamped)
         self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer([self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 10, 0.1, allow_headerless=True)
         self.sub_encoder_ticks.registerCallback(self.cb_encoder_data)
-        #self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
-        #self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
-
-
-        self.led = rospy.Publisher(f'/{self.veh_name}/led_emitter_node/led_pattern',
-                                    LEDPattern, queue_size=1)
 
         # Proxy
         led_service = f'/{self.veh_name}/led_controller_node/led_pattern'
         rospy.wait_for_service(led_service)
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
 
-        #self.change_led_lights('white')
+        # Bag
+        self.bag_name = f'/{self.veh_name}/robot_data.bag'
+        self.bag = rosbag.Bag(self.bag_name)
 
+        self.change_led_lights('white')
     
         self.log("Initialized")
+
 
     def cb_encoder_data(self, msgLeft, msgRight):
         """ Update encoder distance information from ticks.
@@ -107,7 +106,6 @@ class OdometryNode(DTROS):
 
         self.robot_frame['theta'] %= 2*np.pi
 
-
         self.global_frame['x'] += dA*np.cos(self.global_frame['theta'])
         self.global_frame['y'] += dA*np.sin(self.global_frame['theta'])
         self.global_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
@@ -115,6 +113,10 @@ class OdometryNode(DTROS):
 
         if self.dist_remain > 0:
             self.dist_remain -= self.dx_right
+
+        # recording in the rosbag
+        self.write_in_bag()
+
 
     def change_led_lights(self, color: str):
         '''
@@ -138,6 +140,7 @@ class OdometryNode(DTROS):
     def cb_executed_commands(self, msg):
         self.left_dir = 1 if msg.vel_left > 0 else -1
         self.right_dir = 1 if msg.vel_right > 0 else -1
+
 
     def run(self, rate):
 
@@ -181,7 +184,18 @@ class OdometryNode(DTROS):
                 self.go_circle(14)
             rate.sleep()
             
-            
+
+    def write_in_bag(self):
+        '''
+        Writing in the bag the x and y coordinates of the robot.
+        '''
+        try:
+            self.bag.write('x', self.robot_frame['x'])
+            self.bag.write('y', self.robot_frame['y'])
+        except Exception as e:
+            print(f'This is the error message for bag: {e}')
+            self.bag.close()
+
 
      # move to position relative to robot
     def move_forward(self, next_stage):
@@ -209,6 +223,7 @@ class OdometryNode(DTROS):
             msg_wheels_cmd.vel_left = 0.4
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
+
     def move_backward(self, next_stage):
         msg_wheels_cmd = WheelsCmdStamped()
         if (self.robot_frame['x'] >= -0.02 and self.robot_frame['x'] <= 0.01):
@@ -230,9 +245,11 @@ class OdometryNode(DTROS):
                 msg_wheels_cmd.vel_left = -0.4
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
+
     def do_nothing(self):
         pass
         
+
     def stop_being_silly(self, next_stage, hz):
         msg_wheels_cmd = WheelsCmdStamped()
         msg_wheels_cmd.vel_right = 0
@@ -268,6 +285,7 @@ class OdometryNode(DTROS):
                 msg_wheels_cmd.vel_right = -0.4
                 msg_wheels_cmd.vel_left = 0.4
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
+
 
     def go_circle(self, next_stage):
         self.log('start circle')
