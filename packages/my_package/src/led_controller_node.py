@@ -6,7 +6,7 @@ import rosbag
 import rospy
 import time
 
-from duckietown_msgs.srv import ChangePattern, SetCustomPattern, ChangePatternResponse
+from duckietown_msgs.srv import SetCustomLEDPattern, ChangePattern
 
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import LEDPattern
@@ -26,22 +26,21 @@ class LEDControlNode(DTROS):
 
         self.veh_name = rospy.get_namespace().strip("/")
 
-        led = f'/{self.veh_name}/led_emitter_node/set_custom__pattern'
+        led_servise = f'/{self.veh_name}/led_emitter_node/set_custom_pattern'
 
-        # rospy.wait_for_service(led)
 
-        change_led = rospy.ServiceProxy(led, SetCustomPattern)
+        change_led_service = rospy.ServiceProxy(
+            led_servise, 
+            SetCustomLEDPattern
+        )
 
         msg = LEDPattern()
-        msg.color_list = ['green', 'green', 'green', 'green', 'green']
-        msg.color_mask = [1,1,1,1,1]
+        msg.color_list = ['white', '', '', '', '']
+        msg.color_mask = [1, 0, 0, 0, 0]
         msg.frequency = 0
-        msg.frequency_mask = [0,0,0,0,0]
+        msg.frequency_mask = [0, 0, 0, 0, 0]
+        response = change_led_service(msg)
 
-        change_led(change_led)
-
-
-        self.log(str('hello'))
         
 
 if __name__ == '__main__':
