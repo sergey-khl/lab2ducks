@@ -61,9 +61,6 @@ class OdometryNode(DTROS):
         self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer([self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 10, 0.1, allow_headerless=True)
         self.sub_encoder_ticks.registerCallback(self.cb_encoder_data)
 
-
-        self.sub_led_emitter = rospy.Subscriber(led_emitter, String, self.change )
-
         #self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
         #self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
 

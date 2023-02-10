@@ -14,6 +14,7 @@ from std_msgs.msg import ColorRGBA
 
 hostname = os.environ['VEHICLE_NAME']
 
+
 class LEDControlNode(DTROS):
     """
     Switches the led color?
@@ -23,23 +24,20 @@ class LEDControlNode(DTROS):
             node_name=node_name, node_type=NodeType.CONTROL
         )
 
+        self.veh_name = rospy.get_namespace().strip("/")
+
         led = f'/{self.veh_name}/led_emitter_node/set_pattern'
 
-        rospy.wait_for_service(led)
+        # rospy.wait_for_service(led)
 
-        try:
-            change_led = rospy.ServiceProxy('GREEN', ChangePattern)
+        change_led = rospy.ServiceProxy(led, ChangePattern)
 
-        except rospy.ServiceException as e:
-            print("Service call failed: %s"%e)
-            rospy.loginfo("No light :(")
+        msg = LEDPattern('green')
+
+        self.log(str('hello'))
         
-
 
 if __name__ == '__main__':
     node = LEDControlNode(node_name='led_controller_node')
-
-    rospy.loginfo("Let there be light")
-
 
     rospy.spin()
