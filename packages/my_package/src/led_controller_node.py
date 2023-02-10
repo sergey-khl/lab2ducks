@@ -40,7 +40,9 @@ class LEDNode(DTROS):
 
         # Servers
         self.server = rospy.Service(
-            '/{}/led_node/led_pattern'.format(self.veh_name), ChangePattern, self.handle_change_led_msg)
+            '/{}/led_controller_node/led_pattern'.format(self.veh_name), 
+            ChangePattern, 
+            self.handle_change_led_msg)
 
         self.colors = {
             "off": [0, 0, 0],
