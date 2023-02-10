@@ -42,6 +42,9 @@ class OdometryNode(DTROS):
             'y': 0,
             'theta': 0
         }
+
+        self.circle_remain = 0
+
         self.stage = 0
 
         # Publishers
@@ -76,131 +79,166 @@ class OdometryNode(DTROS):
         self.robot_frame['x'] += dA*np.cos(self.robot_frame['theta'])
         self.robot_frame['y'] += dA*np.sin(self.robot_frame['theta'])
         self.robot_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
+        self.robot_frame['theta'] %= 2*np.pi
+        
 
-        self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
+    def run(self, rate):
+        while not self.is_shutdown:
+            self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
+            #wait 
+            if (self.stage == 0):
+                self.stop_being_silly(1, 1/5)
+                # box movement
+            elif (self.stage == 1):
+                self.rotate(2, 3*np.pi/2)
+            elif (self.stage == 2):
+                self.move_forward(3)
+            elif (self.stage == 3):
+                self.rotate(4, np.pi/2)
+            elif (self.stage == 4):
+                self.move_forward(5)
+            elif (self.stage == 5):
+                self.rotate(6, np.pi/2)
+            elif (self.stage == 6):
+                self.move_forward(7)
+                #wait
+            elif (self.stage == 7):
+                self.stop_being_silly(8, 1/5)
+                # go back to original pos
+            elif (self.stage == 8):
+                self.rotate(9, np.pi/2)
+            elif (self.stage == 9):
+                self.move_forward(10)
+                # go back to original orientation
+            elif (self.stage == 10):
+                self.rotate(11, np.pi/2)
+            elif (self.stage == 11):
+                self.rotate(12, np.pi/2)
+            elif (self.stage == 12):
+                self.stop_being_silly(13, 1/5)
+            elif (self.stage == 13):
+                self.go_circle(14)
+            rate.sleep()
+            
+            
+
+     # move to position relative to robot
+    def move_forward(self, next_stage):
+        self.log('going forward')
         msg_wheels_cmd = WheelsCmdStamped()
-        msg_wheels_cmd.header.stamp = msgLeft.header.stamp
-
-        #wait 
-        if (self.stage == 0):
-            self.stop_being_silly(msg_wheels_cmd, 1, 1/5)
-        # box movement
-        elif (self.stage == 1):
-            self.rotate(msg_wheels_cmd, 2, 3*np.pi/2)
-        elif (self.stage == 2):
-            self.move_forward(msg_wheels_cmd, 3)
-        elif (self.stage == 3):
-            self.rotate(msg_wheels_cmd, 4, np.pi/2)
-        elif (self.stage == 4):
-            self.move_forward(msg_wheels_cmd, 5)
-        elif (self.stage == 5):
-            self.rotate(msg_wheels_cmd, 6, np.pi/2)
-        elif (self.stage == 6):
-            self.move_forward(msg_wheels_cmd, 7)
-        #wait
-        elif (self.stage == 7):
-            self.stop_being_silly(msg_wheels_cmd, 8, 1/5)
-        # go back to original pos
-        elif (self.stage == 8):
-            self.rotate(msg_wheels_cmd, 9, np.pi/2)
-        elif (self.stage == 9):
-            self.move_forward(msg_wheels_cmd, 10)
-        # go back to original orientation
-        elif (self.stage == 10):
-            self.rotate(msg_wheels_cmd, 11, np.pi/2)
-        elif (self.stage == 11):
-            self.rotate(msg_wheels_cmd, 12, np.pi/2)
-        #wait
-	    elif (self.stage == 12):
-      	    self.stop_being_silly(msg_wheels_cmd, 13, 1/5)
-        # clockwise rotate
-	    elif (self.stage == 13):
-            self.go_circle(msg_wheels_cmd, 14)
-            self.pub_wheels_cmd.publish(msg_wheels_cmd)
-
-    # move to position relative to robot
-    def move_forward(self, msg_wheels_cmd, next_stage):
-        if (self.robot_frame['x'] >= 1.23 and self.robot_frame['x'] <= 1.27):
+        if (self.robot_frame['x'] >= 1.00 and self.robot_frame['x'] <= 1.05):
             self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
-            return
-        
-        if (self.robot_frame['y'] > 0.01):
-            msg_wheels_cmd.vel_right = 0.35
-            msg_wheels_cmd.vel_left = 0.4
-
-        elif (self.robot_frame['y'] < -0.01):
-            msg_wheels_cmd.vel_right = 0.4
-            msg_wheels_cmd.vel_left = 0.35
-
+            self.log('done moving forward')
         else:
-            msg_wheels_cmd.vel_right = 0.4
-            msg_wheels_cmd.vel_left = 0.4
+            if (self.robot_frame['y'] > 0.05):
+                self.log('too left')
+                msg_wheels_cmd.vel_right = 0.4
+                msg_wheels_cmd.vel_left = 0.3
+            elif (self.robot_frame['y'] < -0.05):
+                self.log('too right')
+                msg_wheels_cmd.vel_right = 0.3
+                msg_wheels_cmd.vel_left = 0.4
+            else:
+                msg_wheels_cmd.vel_right = 0.4
+                msg_wheels_cmd.vel_left = 0.4
 
-    def move_backward(self, msg_wheels_cmd):
+        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+
+    def move_backward(self, next_stage):
+        msg_wheels_cmd = WheelsCmdStamped()
         if (self.robot_frame['x'] >= -0.02 and self.robot_frame['x'] <= 0.01):
-            self.stage = 2
+            self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
-            return
-        
-        if (self.robot_frame['y'] > 0.01):
-            msg_wheels_cmd.vel_right = -0.35
-            msg_wheels_cmd.vel_left = -0.4
-
-        elif (self.robot_frame['y'] < -0.01):
-            msg_wheels_cmd.vel_right = -0.4
-            msg_wheels_cmd.vel_left = -0.35
-
+            
         else:
-            msg_wheels_cmd.vel_right = -0.4
-            msg_wheels_cmd.vel_left = -0.4
+            if (self.robot_frame['y'] > 0.01):
+                msg_wheels_cmd.vel_right = -0.35
+                msg_wheels_cmd.vel_left = -0.4
+
+            elif (self.robot_frame['y'] < -0.01):
+                msg_wheels_cmd.vel_right = -0.4
+                msg_wheels_cmd.vel_left = -0.35
+
+            else:
+                msg_wheels_cmd.vel_right = -0.4
+                msg_wheels_cmd.vel_left = -0.4
+        self.pub_wheels_cmd.publish(msg_wheels_cmd)
         
-    def stop_being_silly(self, msg_wheels_cmd):
+    def stop_being_silly(self, next_stage, hz):
+        msg_wheels_cmd = WheelsCmdStamped()
         msg_wheels_cmd.vel_right = 0
         msg_wheels_cmd.vel_left = 0
 
-    def rotate(self, msg_wheels_cmd):
-        if (self.robot_frame['theta'] >= 3*np.pi/2-0.2 and self.robot_frame['theta'] <= 3*np.pi/2+0.2):
-            self.stage = 1
+        self.log('starting wait')
+        rate = rospy.Rate(hz) # 1Hz
+        rate.sleep()
+        
+        self.log('done wait')
+
+        self.stage = next_stage
+        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+        
+
+    def rotate(self, next_stage, deg):
+        self.log('start rotate')
+        msg_wheels_cmd = WheelsCmdStamped()
+        if (self.robot_frame['theta'] >= deg-0.2 and self.robot_frame['theta'] <= deg+0.2):
+            self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
-            return
+            self.log('done rotating')
+        else:
+            if (deg < np.pi):
+                msg_wheels_cmd.vel_right = 0.45
+                msg_wheels_cmd.vel_left = -0.45
+            else:
+                msg_wheels_cmd.vel_right = -0.45
+                msg_wheels_cmd.vel_left = 0.45
+        self.pub_wheels_cmd.publish(msg_wheels_cmd)
 
-        msg_wheels_cmd.vel_right = -0.15
-        msg_wheels_cmd.vel_left = 0.15
-
-    def go_circle(self, msg_wheels_cmd):
+    def go_circle(self, next_stage):
+        self.log('start circle')
+        msg_wheels_cmd = WheelsCmdStamped()
+        if (self.circle_remain == 0):
+            self.circle_remain = 2*np.pi*0.7
         if (self.circle_remain >= -0.1 and self.circle_remain <= 0.2):
-            self.stage = 2
+            self.stage = next_stage
             msg_wheels_cmd.vel_right = 0
             msg_wheels_cmd.vel_left = 0
             self.circle_remain = 0
-            return
-        
-        msg_wheels_cmd.vel_right = 0.3
-        msg_wheels_cmd.vel_left = 0.18
-        self.circle_remain -= self.dx_right
+            self.log('done with circle')
+        else:
+            msg_wheels_cmd.vel_right = 0.18
+            msg_wheels_cmd.vel_left = 0.3
+            self.circle_remain -= self.dx_right
+        self.pub_wheels_cmd.publish(msg_wheels_cmd)
         
 
     # https://docs.duckietown.org/daffy/duckietown-robotics-development/out/new_duckiebot_functionality.html
     def on_shutdown(self):
         """Shutdown procedure.
         Publishes a zero velocity command at shutdown."""
-        for i in range(3):
-            msg_wheels_cmd = WheelsCmdStamped()
-            msg_wheels_cmd.vel_right = 0
-            msg_wheels_cmd.vel_left = 0
-            self.pub_wheels_cmd.publish(msg_wheels_cmd)
-        super(OdometryNode, self).on_shutdown()
+        try:
+            for i in range(15):
+                msg_wheels_cmd = WheelsCmdStamped()
+                msg_wheels_cmd.vel_right = 0
+                msg_wheels_cmd.vel_left = 0
+                self.pub_wheels_cmd.publish(msg_wheels_cmd)
+        except:
+            super(OdometryNode, self).on_shutdown()
         
         
 
 if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
+    rate = rospy.Rate(30)
     # Keep it spinning to keep the node alive
+    
+    #rospy.spin()
     try:
-        rospy.spin()
+        node.run(rate)
     except rospy.ROSInterruptException:
         pass
