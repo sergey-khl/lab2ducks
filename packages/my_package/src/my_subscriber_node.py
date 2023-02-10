@@ -302,11 +302,13 @@ class OdometryNode(DTROS):
 
 if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
-    rate = rospy.Rate(30)
-    # Keep it spinning to keep the node alive
+
+    rospy.spin()
     
-    #rospy.spin()
-    try:
-        node.run(rate)
-    except rospy.ROSInterruptException:
-        pass
+    # # Keep it spinning to keep the node alive
+    
+    # #rospy.spin()
+    # try:
+    #     node.run(rate)
+    # except rospy.ROSInterruptException:
+    #     pass
