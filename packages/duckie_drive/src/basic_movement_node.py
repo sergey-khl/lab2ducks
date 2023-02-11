@@ -10,8 +10,6 @@ from std_msgs.msg import Header, String
 from duckietown_msgs.srv import ChangePattern
 from pathlib import Path
 
-
-
 # References: https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/wheel_odometry.py
 
 
@@ -45,7 +43,6 @@ class BasicMovemenNode(DTROS):
             callback_args='left', 
             queue_size=1
         )
-        
         self.sub_encoder_ticks_right = rospy.Subscriber(
             f'/{self.veh_name}/right_wheel_encoder_node/tick',
             WheelEncoderStamped, self.cb_encoder_data,
@@ -213,17 +210,18 @@ class BasicMovemenNode(DTROS):
 
     def write_in_bag(self):
         '''
-        TODO
         Writing in the bag the x and y coordinates of the robot.
         '''
+        rospy.loginfo(self.robot_frame['x'])
         try:
             self.bag.write('x', self.robot_frame['x'])
             self.bag.write('y', self.robot_frame['y'])
+
         except Exception as e:
             print(f'This is the error message for bag: {e}')
             self.bag.close()
 
-    def read_from_bag(self): #TODO
+    def read_from_bag(self): 
         for topic, msg, t in self.bag.read_messages(topics=['x', 'y']):
             print('Rosbag data:', topic, msg, t)
         self.bag.close()
@@ -300,12 +298,12 @@ class BasicMovemenNode(DTROS):
 
 if __name__ == '__main__':
     node = BasicMovemenNode(node_name='basic_movement_node')
-
-    # Keep it spinning to keep the node alive
     node.run()
 
     # Plotting the rosbag data
     #node.read_from_bag()
 
     rospy.spin()
-    rospy.signal_shutdown('Done Everything!')
+    node.bag.close()
+
+    rospy.signal_shutdown('Duckiebot quacks goodbye!')
