@@ -86,7 +86,7 @@ class BasicMovemenNode(DTROS):
             wheel: an argument to know which wheel is in use
         '''
 
-        # init on start 
+        # init on start  of new cmd
         if self.prev_values[wheel] == 0:
             self.prev_values[wheel] = msg.data
             return
@@ -95,14 +95,18 @@ class BasicMovemenNode(DTROS):
         diff_value = msg.data - self.prev_values[wheel]
         self.prev_values[wheel] = msg.data
 
-        # caluclates the distance travled 
+        rospy.loginfo(f"encoder diff {diff_value}")
+
+        # caluclates the distance travled
         dist = 2 * np.pi * self._radius * diff_value / msg.resolution
 
+        # update distance travled 
         self.d[wheel] = dist
         self.traveled_distance[wheel] += dist
 
         # updating the robot frame coordinates & the world frame coordinates
         self.update_coordinates()
+
 
     def clear(self):
         '''
@@ -110,9 +114,10 @@ class BasicMovemenNode(DTROS):
         '''
         self.traveled_distance = {'left': 0, 'right': 0}
 
+
     def move(self, vel_left: float = 0.0, vel_right: float = 0.0):
         '''
-        Updating the velocity of the robot.
+        Updating the velocity of the robot
         Args:
             vel_left: left wheel velocity
             vel_right: right wheel velocity
@@ -126,27 +131,9 @@ class BasicMovemenNode(DTROS):
                 vel_right=vel_right
             ))
 
-    def change_led_lights(self, color: str):
-        '''
-        Sends msg to service server
-        Colors:
-            "off": [0,0,0],
-            "white": [1,1,1],
-            "green": [0,1,0],
-            "red": [1,0,0],
-            "blue": [0,0,1],
-            "yellow": [1,0.8,0],
-            "purple": [1,0,1],
-            "cyan": [0,1,1],
-            "pink": [1,0,0.5],
-        '''
-        msg = String()
-        msg.data = color
-        self.led_pattern(msg)
-
     def stop(self, seconds: int = None):
         '''
-        Sends a velocity of 0 to each wheel of the duckiebot to stop it.
+        Sends a velocity of 0 to each wheel of the duckiebot to stop moving
         Args:
             seconds: seconds duckiebot should stop
         '''
@@ -161,10 +148,10 @@ class BasicMovemenNode(DTROS):
         start = time.time()
         end = start
 
-        # TODO: see if rospy.is_shutdown() is necessary
         while not rospy.is_shutdown() and (end - start) < seconds:
             self.move(vel_left=0.0, vel_right=0.0)
             end = time.time()
+
 
     def rotate(self, rate: rospy.Rate, desired_distance: float, vel_left: float = 0.2,
                vel_right: float = -0.2, clockwise: bool = True):
@@ -194,9 +181,10 @@ class BasicMovemenNode(DTROS):
                 self.move(vel_left=vel_left, vel_right=vel_right)
                 rate.sleep()
 
+
     def forward(self, rate: rospy.Rate, desired_distance: float, vel_left: int = 0.43, vel_right: int = 0.42):
         '''
-        Going forward by the specified distance.
+        Going forward by the specified distance & speed 
         Args:
             rate: an instance of rospy.Rate
             desired_distance: the desired distance the duckiebot should travel
@@ -213,11 +201,61 @@ class BasicMovemenNode(DTROS):
             self.move(vel_left=vel_left, vel_right=vel_right)
             rate.sleep()
 
+
+    def change_led_lights(self, color: str):
+        '''
+        Sends msg to service server
+        Colors:
+            "off": [0,0,0],
+            "white": [1,1,1],
+            "green": [0,1,0],
+            "red": [1,0,0],
+            "blue": [0,0,1],
+            "yellow": [1,0.8,0],
+            "purple": [1,0,1],
+            "cyan": [0,1,1],
+            "pink": [1,0,0.5],
+        '''
+        msg = String()
+        msg.data = color
+        self.led_pattern(msg)
+
+
+    def update_coordinates(self):
+        '''
+        Updating the robot frame coordinates and the world coordinates then write them in a bag
+        '''
+        # update robot frame
+        delta_theta = (self.d['right'] - self.d['left']) / self._baseline
+        delta_A = (self.d['left'] + self.d['right']) / 2
+        delta_x = delta_A * np.cos(self.robot_frame['theta'])
+        delta_y = delta_A * np.sin(self.robot_frame['theta'])
+
+        self.robot_frame['x'] += delta_x
+        self.robot_frame['y'] += delta_y
+        self.robot_frame['theta'] = (
+            self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
+        
+        # update global frame
+        robot_frame_vec = np.array([self.robot_frame['x']], [self.robot_frame['y']], self.robot_frame['theta'])
+        global_frame_vec = np.array([0, -1, 0],[1, 0, 0],[0, 0, 1+2/np.pi])*robot_frame_vec
+
+        rospy.loginfo(f"global cord {robot_frame_vec}")
+        rospy.loginfo(f"global cord {global_frame_vec}")
+
+        self.global_frame['x'] = global_frame_vec[0]
+        self.global_frame['y'] = global_frame_vec[1]
+        self.global_frame['theta'] = global_frame_vec[2]
+
+
+        # recording in the rosbag
+        self.write_in_bag()
+
+
     def write_in_bag(self):
         '''
         Writing in the bag the x and y coordinates of the robot.
         '''
-        rospy.loginfo(self.robot_frame['x'])
         try:
             x = Float64()
             x.data = self.robot_frame['x']
@@ -231,10 +269,12 @@ class BasicMovemenNode(DTROS):
             print(f'This is the error message for bag: {e}')
             self.bag.close()
 
+
     def read_from_bag(self): 
         for topic, msg, t in self.bag.read_messages(topics=['x', 'y']):
             print('Rosbag data:', topic, msg, t)
         self.bag.close()
+
 
     def run(self):
         '''
@@ -287,23 +327,6 @@ class BasicMovemenNode(DTROS):
         # self.stop(seconds=5)
 
         # TODO: clockwise circular movement
-
-    def update_coordinates(self):
-        '''
-        Updating the robot frame coordinates and writing them in a bag
-        '''
-        delta_theta = (self.d['right'] - self.d['left']) / self._baseline
-        delta_A = (self.d['left'] + self.d['right']) / 2
-        delta_x = delta_A * np.cos(self.robot_frame['theta'])
-        delta_y = delta_A * np.sin(self.robot_frame['theta'])
-
-        self.robot_frame['x'] += delta_x
-        self.robot_frame['y'] += delta_y
-        self.robot_frame['theta'] = (
-            self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
-
-        # recording in the rosbag
-        self.write_in_bag()
 
 
 if __name__ == '__main__':
