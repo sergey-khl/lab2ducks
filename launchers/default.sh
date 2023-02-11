@@ -13,7 +13,8 @@ dt-launchfile-init
 # NOTE: Use `dt-exec COMMAND` to run the main process (blocking process)
 
 # launching app
-dt-exec roslaunch my_package multiple_nodes.launch veh:=$VEHICLE_NAME
+#roslaunch camera_demo_node camera.launch veh:=$VEHICLE_NAME
+dt-exec roslaunch duckie_drive multiple_nodes.launch veh:=$VEHICLE_NAME
 
 
 # ----------------------------------------------------------------------------
