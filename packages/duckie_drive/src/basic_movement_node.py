@@ -6,7 +6,7 @@ import rosbag
 
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPattern
-from std_msgs.msg import Header, String
+from std_msgs.msg import Header, String, Float64
 from duckietown_msgs.srv import ChangePattern
 from pathlib import Path
 
@@ -214,8 +214,13 @@ class BasicMovemenNode(DTROS):
         '''
         rospy.loginfo(self.robot_frame['x'])
         try:
-            self.bag.write('x', self.robot_frame['x'])
-            self.bag.write('y', self.robot_frame['y'])
+            x = Float64()
+            x.data = self.robot_frame['x']
+            y = Float64()
+            y.data = self.robot_frame['y']
+
+            self.bag.write('tick', x)
+            self.bag.write('tick', y)
 
         except Exception as e:
             print(f'This is the error message for bag: {e}')
