@@ -70,7 +70,8 @@ class BasicMovemenNode(DTROS):
         rospy.wait_for_service(led_service)
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
 
-        # -- ROS Bag -- (https://codeberg.org/akemi/duckietown/src/commit/70507322806ae0ff4e39fcbfa4bada3a7328a179/lab2/heartbeat-ros/packages/odometry_node/src/odometry_publisher_node.py)
+        # -- ROS Bag -- 
+        # Reference: (https://codeberg.org/akemi/duckietown/src/commit/70507322806ae0ff4e39fcbfa4bada3a7328a179/lab2/heartbeat-ros/packages/odometry_node/src/odometry_publisher_node.py)
         bag_name = time.ctime().replace(' ', '_').replace(':', '-')
         bag_filename = f'/data/bags/odometry_at_{bag_name}.bag'
         Path(bag_filename).parent.mkdir(parents=True, exist_ok=True)
@@ -130,6 +131,7 @@ class BasicMovemenNode(DTROS):
                 vel_left=vel_left,
                 vel_right=vel_right
             ))
+
 
     def stop(self, seconds: int = None):
         '''
@@ -237,7 +239,7 @@ class BasicMovemenNode(DTROS):
             self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
         
         # update global frame
-        robot_frame_vec = np.array([self.robot_frame['x']], [self.robot_frame['y']], self.robot_frame['theta'])
+        robot_frame_vec = np.array([self.robot_frame['x']], [self.robot_frame['y']], [self.robot_frame['theta']])
         global_frame_vec = np.array([0, -1, 0],[1, 0, 0],[0, 0, 1+2/np.pi])*robot_frame_vec
 
         rospy.loginfo(f"global cord {robot_frame_vec}")
@@ -246,7 +248,6 @@ class BasicMovemenNode(DTROS):
         self.global_frame['x'] = global_frame_vec[0]
         self.global_frame['y'] = global_frame_vec[1]
         self.global_frame['theta'] = global_frame_vec[2]
-
 
         # recording in the rosbag
         self.write_in_bag()
@@ -258,12 +259,15 @@ class BasicMovemenNode(DTROS):
         '''
         try:
             x = Float64()
-            x.data = self.robot_frame['x']
+            x.data = self.global_frame['x']
             y = Float64()
-            y.data = self.robot_frame['y']
+            y.data = self.global_frame['y']
+            theta = Float64()
+            theta.data = self.global_frame['theta']
 
-            self.bag.write('tick', x)
-            self.bag.write('tick', y)
+            self.bag.write('x coordinate: ', x)
+            self.bag.write('y coordinate: ', y)
+            self.bag.write('orientation: ', theta)
 
         except Exception as e:
             print(f'This is the error message for bag: {e}')
