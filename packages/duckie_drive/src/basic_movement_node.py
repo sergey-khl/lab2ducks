@@ -67,7 +67,7 @@ class BasicMovemenNode(DTROS):
         '''
         # updating to get the intial values
         # TODO: check if this is updating after clearing the travel distance and should we change it
-        
+
         if self.prev_values[wheel] == 0:
             self.prev_values[wheel] = msg.data
             return
@@ -280,7 +280,7 @@ class BasicMovemenNode(DTROS):
 
 
 if __name__ == '__main__':
-    node = OdometryNode(node_name='wheel_odometry')
+    node = BasicMovemenNode(node_name='basic_movement_node')
 
     # Keep it spinning to keep the node alive
     node.run()

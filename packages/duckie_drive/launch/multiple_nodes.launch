@@ -2,7 +2,6 @@
 
   <group ns="$(arg veh)">  
 
-    <node pkg="duckie_drive" type="my_subscriber_node.py" name="my_subscriber_node"  output="screen"/>
     <node pkg="duckie_drive" type="led_controller_node.py" name="led_controller_node" output="screen"/>
     <node pkg="duckie_drive" type="basic_movement_node.py" name="basic_movement_node" output="screen"/>
 
