@@ -1,8 +1,8 @@
 <package format="2">
-  <name>my_package</name>
+  <name>duckie_drive</name>
   <version>1.0.0</version>
   <description>
-    Controls the color of the leds as a service
+    Implements basic odometry and kinematics to control duckiebot
   </description>
   <maintainer email="sergeykhlynovskiy@gmail.com">sergey khlynovskiy</maintainer>
   <license>GPL3</license>

@@ -1,5 +1,5 @@
 <package format="2">
-  <name>my_package</name>
+  <name>camera_demo</name>
   <version>1.0.0</version>
   <description>
     Subscribs the the camera and publishes both the camera info and a grayscale compress jpeg

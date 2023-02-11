@@ -5,8 +5,8 @@ from duckietown_msgs.srv import SetCustomLEDPattern, ChangePattern, ChangePatter
 from duckietown_msgs.msg import LEDPattern
 from duckietown.dtros import DTROS, NodeType, TopicType
 
-# Reference: https://github.com/duckietown/dt-core/blob/6d8e99a5849737f86cab72b04fd2b449528226be/packages/led_emitter/src/led_emitter_node.py#L254
-
+# References:   https://github.com/duckietown/dt-core/blob/6d8e99a5849737f86cab72b04fd2b449528226be/packages/led_emitter/src/led_emitter_node.py#L254
+#               https://github.com/anna-ssi/mobile-robotics/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/led_node.py
 
 class LEDNode(DTROS):
     def __init__(self, node_name: str) -> None:
@@ -30,13 +30,13 @@ class LEDNode(DTROS):
 
         self.veh_name = rospy.get_namespace().strip("/")
 
-        # Proxies
+        # -- Proxies -- 
         self.setCustomPattern = rospy.ServiceProxy(
             f'/{self.veh_name}/led_emitter_node/set_custom_pattern',
             SetCustomLEDPattern
         )
 
-        # Publishers
+        # -- Publishers --
         self.pub_leds = rospy.Publisher(
             "~led_pattern",
             LEDPattern, 
@@ -44,7 +44,7 @@ class LEDNode(DTROS):
             dt_topic_type=TopicType.DRIVER
         )
 
-        # Servers
+        # -- Servers -- 
         self.server = rospy.Service(
             f'/{self.veh_name}/led_controller_node/led_pattern', 
             ChangePattern, 

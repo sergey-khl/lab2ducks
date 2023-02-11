@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import time
 import rospy
 import rosbag
 
 from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPattern
-from std_msgs.msg import Header, String
+from std_msgs.msg import String
 from duckietown_msgs.srv import ChangePattern
 import message_filters
 
@@ -57,18 +56,33 @@ class OdometryNode(DTROS):
         self.ang_remain = 0
         self.stage = 0
 
-        # Publishers
-        self.pub_wheels_cmd = rospy.Publisher(encCMD, WheelsCmdStamped, queue_size=1)
-        self.led = rospy.Publisher(f'/{self.veh_name}/led_emitter_node/led_pattern',
-                                    LEDPattern, queue_size=1)
+        # -- Publishers -- 
+        self.pub_wheels_cmd = rospy.Publisher(
+            f'/{self.veh_name}/wheels_driver_node/wheels_cmd', 
+            WheelsCmdStamped, 
+            queue_size=1
+        )
+        self.led = rospy.Publisher(
+            f'/{self.veh_name}/led_emitter_node/led_pattern',
+            LEDPattern,
+            queue_size=1
+        )
         
-        # Subscribing to the wheel encoders
-        self.sub_encoder_ticks_left = message_filters.Subscriber(encLeft, WheelEncoderStamped)
-        self.sub_encoder_ticks_right = message_filters.Subscriber(encRight, WheelEncoderStamped)
-        self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer([self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 10, 0.1, allow_headerless=True)
+        # -- Subscribers --
+        self.sub_encoder_ticks_left = message_filters.Subscriber(
+            f'/{self.veh_name}/left_wheel_encoder_node/tick', 
+            WheelEncoderStamped
+        )
+        self.sub_encoder_ticks_right = message_filters.Subscriber(
+            f'/{self.veh_name}/right_wheel_encoder_node/tick', 
+            WheelEncoderStamped
+        )
+
+        self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer(
+            [self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 10, 0.1, allow_headerless=True)
         self.sub_encoder_ticks.registerCallback(self.cb_encoder_data)
 
-        # Proxy
+        # -- Proxy -- 
         led_service = f'/{self.veh_name}/led_controller_node/led_pattern'
         rospy.wait_for_service(led_service)
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
