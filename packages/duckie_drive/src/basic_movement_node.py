@@ -30,22 +30,25 @@ class BasicMovemenNode(DTROS):
             f'/{self.veh_name}/kinematics_node/baseline')
 
         # -- Assigning variables -- 
-        self.desired_distance = desired_distance
-        self.prev_values = {'left': 0, 'right': 0}
-        self.d = {'left': 0, 'right': 0}
-        self.traveled_distance = {'left': 0, 'right': 0}
-        self.robot_frame = {'x': 0, 'y': 0, 'theta': 0}
+        self.desired_distance = desired_distance # distance you want to travel (m)
+        self.prev_values = {'left': 0, 'right': 0} # wheel encoder value at time t-1
+        self.d = {'left': 0, 'right': 0} # distance traveled between time t-1 and t
+        self.traveled_distance = {'left': 0, 'right': 0} # total distance traveled by each wheel
+        self.robot_frame = {'x': 0, 'y': 0, 'theta': 0} # (x,y) translation and orientation of robot in its frame
+        self.global_frame = {'x': 0, 'y': 0, 'theta': 0} # (x,y) translation and orientation of robot in world frame 
 
         # -- Subscribers -- 
         self.sub_encoder_ticks_left = rospy.Subscriber(
             f'/{self.veh_name}/left_wheel_encoder_node/tick',
-            WheelEncoderStamped, self.cb_encoder_data,
+            WheelEncoderStamped, 
+            self.cb_encoder_data,
             callback_args='left', 
             queue_size=1
         )
         self.sub_encoder_ticks_right = rospy.Subscriber(
             f'/{self.veh_name}/right_wheel_encoder_node/tick',
-            WheelEncoderStamped, self.cb_encoder_data,
+            WheelEncoderStamped, 
+            self.cb_encoder_data,
             callback_args='right', 
             queue_size=1
         )
@@ -74,29 +77,31 @@ class BasicMovemenNode(DTROS):
         self.bag = rosbag.Bag(bag_filename, 'w')
         rospy.loginfo(f"Made a bag {self.bag}")
 
+
     def cb_encoder_data(self, msg: WheelEncoderStamped, wheel: str):
         '''
-        Getting the data from the nodes using subscribers.
+        Getting the data from the wheel encoder node 
         Args:
             msg: the latest data from the subscriber
             wheel: an argument to know which wheel is in use
         '''
-        # updating to get the intial values
-        # TODO: check if this is updating after clearing the travel distance and should we change it
 
+        # init on start 
         if self.prev_values[wheel] == 0:
             self.prev_values[wheel] = msg.data
             return
-
+        
+        # find wheel rotation by encoder difference
         diff_value = msg.data - self.prev_values[wheel]
         self.prev_values[wheel] = msg.data
 
+        # caluclates the distance travled 
         dist = 2 * np.pi * self._radius * diff_value / msg.resolution
 
         self.d[wheel] = dist
         self.traveled_distance[wheel] += dist
 
-        # updating the robot frame coordinates
+        # updating the robot frame coordinates & the world frame coordinates
         self.update_coordinates()
 
     def clear(self):
