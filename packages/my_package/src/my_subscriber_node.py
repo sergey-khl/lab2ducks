@@ -303,7 +303,12 @@ class OdometryNode(DTROS):
             msg_wheels_cmd.vel_left = 0.5
             
         self.pub_wheels_cmd.publish(msg_wheels_cmd)
+
         
+    def read_from_bag(self):
+        for topic, msg, t in self.bag.read_messages(topics=['x', 'y']):
+            print('Rosbag data:', topic, msg, t)
+        self.bag.close()
 
     # https://docs.duckietown.org/daffy/duckietown-robotics-development/out/new_duckiebot_functionality.html
     def on_shutdown(self):
