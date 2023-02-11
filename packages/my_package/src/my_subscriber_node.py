@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-
 import numpy as np
-import time
+import os
 import rospy
-import rosbag
-
-from duckietown.dtros import DTROS, NodeType
-from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPattern
-from std_msgs.msg import Header, String
-from duckietown_msgs.srv import ChangePattern
+from duckietown.dtros import DTROS, NodeType, TopicType, DTParam, ParamType
+from duckietown_msgs.msg import Twist2DStamped, WheelEncoderStamped, WheelsCmdStamped
+from std_msgs.msg import Header, Float32
 import message_filters
 
 
@@ -30,7 +26,7 @@ class OdometryNode(DTROS):
         encLeft = f'/{self.veh_name}/left_wheel_encoder_node/tick'
         encRight= f'/{self.veh_name}/right_wheel_encoder_node/tick'
         encCMD = f'/{self.veh_name}/wheels_driver_node/wheels_cmd'
-        twist = f'/{self.veh_name}/kinematics_node/velocity'
+        twist = f'/{self.veh_name}/car_cmd_switch_node/cmd'
 
         self.left_tick = 0
         self.left_last_data = 0
@@ -59,26 +55,16 @@ class OdometryNode(DTROS):
         self.stage = 0
 
         # Publishers
-        self.pub_wheels_cmd = rospy.Publisher(encCMD, WheelsCmdStamped, queue_size=1)
+        #self.pub_wheels_cmd = rospy.Publisher(encCMD, WheelsCmdStamped, queue_size=1)
+        self.pub_kinematics = rospy.Publisher(twist, Twist2DStamped, queue_size=1)
         
         # Subscribing to the wheel encoders
         self.sub_encoder_ticks_left = message_filters.Subscriber(encLeft, WheelEncoderStamped)
         self.sub_encoder_ticks_right = message_filters.Subscriber(encRight, WheelEncoderStamped)
-        self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer([self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 10, 0.1, allow_headerless=True)
+        self.sub_encoder_ticks = message_filters.ApproximateTimeSynchronizer([self.sub_encoder_ticks_left, self.sub_encoder_ticks_right], 1, 0.1, allow_headerless=True)
         self.sub_encoder_ticks.registerCallback(self.cb_encoder_data)
         #self.sub_executed_commands = rospy.Subscriber(encCMD, WheelsCmdStamped, self.cb_executed_commands)
         #self.sub_kinematics = rospy.Subscriber(twist, Twist2DStamped, self.update)
-
-
-        self.led = rospy.Publisher(f'/{self.veh_name}/led_emitter_node/led_pattern',
-                                    LEDPattern, queue_size=1)
-
-        # Proxy
-        led_service = f'/{self.veh_name}/led_controller_node/led_pattern'
-        rospy.wait_for_service(led_service)
-        self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
-
-        #self.change_led_lights('white')
 
     
         self.log("Initialized")
@@ -116,23 +102,7 @@ class OdometryNode(DTROS):
         if self.dist_remain > 0:
             self.dist_remain -= self.dx_right
 
-    def change_led_lights(self, color: str):
-        '''
-        Sends msg to service server
-        Colors:
-            "off": [0,0,0],
-            "white": [1,1,1],
-            "green": [0,1,0],
-            "red": [1,0,0],
-            "blue": [0,0,1],
-            "yellow": [1,0.8,0],
-            "purple": [1,0,1],
-            "cyan": [0,1,1],
-            "pink": [1,0,0.5],
-        '''
-        msg = String()
-        msg.data = color
-        self.led_pattern(msg)
+        
         
         
     def cb_executed_commands(self, msg):
@@ -140,14 +110,14 @@ class OdometryNode(DTROS):
         self.right_dir = 1 if msg.vel_right > 0 else -1
 
     def run(self, rate):
-
         while not self.is_shutdown:
             #self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
             self.log(str(self.global_frame['x']) + "   " + str(self.global_frame['y']) + "   " + str(self.global_frame['theta']))
             #wait 
             if (self.stage == 0):
                 #self.do_nothing()
-                self.stop_being_silly(1, 1/5)
+                #self.stop_being_silly(1, 1/5)
+                self.move_forward(-1)
                 # box movement
             elif (self.stage == 1):
                 self.rotate(2, 'cw')
@@ -179,24 +149,24 @@ class OdometryNode(DTROS):
                 self.stop_being_silly(13, 1/5)
             elif (self.stage == 13):
                 self.go_circle(14)
-            rate.sleep()
+            #rate.sleep()
             
             
 
      # move to position relative to robot
     def move_forward(self, next_stage):
         self.log('going forward')
-        msg_wheels_cmd = WheelsCmdStamped()
+        msg_wheels_cmd = Twist2DStamped()
         if (self.dist_remain == 0):
-            self.dist_remain = 1.25
+            self.dist_remain = 1.1
         if (self.dist_remain >= -0.1 and self.dist_remain <= 0.2):
             self.stage = next_stage
-            msg_wheels_cmd.vel_right = 0
-            msg_wheels_cmd.vel_left = 0
+            msg_wheels_cmd.v = 0
+            msg_wheels_cmd.omega = 0
             self.dist_remain = 0
             self.log('done moving forward')
         else:
-            # if (self.robot_frame['y'] > 0.05):
+            # if (self.rob_frame['y'] > 0.05):
             #     self.log('too left')
             #     msg_wheels_cmd.vel_right = 0.4
             #     msg_wheels_cmd.vel_left = 0.3
@@ -205,9 +175,11 @@ class OdometryNode(DTROS):
             #     msg_wheels_cmd.vel_right = 0.3
             #     msg_wheels_cmd.vel_left = 0.4
             # else:
-            msg_wheels_cmd.vel_right = 0.4
-            msg_wheels_cmd.vel_left = 0.4
-        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+            msg_wheels_cmd.v = 0.4
+            msg_wheels_cmd.omega = 0
+        self.pub_kinematics.publish(msg_wheels_cmd)
+        rate = rospy.Rate(30)
+        rate.sleep()
 
     def move_backward(self, next_stage):
         msg_wheels_cmd = WheelsCmdStamped()
@@ -234,9 +206,9 @@ class OdometryNode(DTROS):
         pass
         
     def stop_being_silly(self, next_stage, hz):
-        msg_wheels_cmd = WheelsCmdStamped()
-        msg_wheels_cmd.vel_right = 0
-        msg_wheels_cmd.vel_left = 0
+        msg_wheels_cmd = Twist2DStamped()
+        msg_wheels_cmd.v = 0
+        msg_wheels_cmd.omega = 0
 
         self.log('starting wait')
         rate = rospy.Rate(hz) # 1Hz
@@ -245,46 +217,58 @@ class OdometryNode(DTROS):
         self.log('done wait')
 
         self.stage = next_stage
-        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+        self.pub_kinematics.publish(msg_wheels_cmd)
         
 
     def rotate(self, next_stage, dir):
-        self.log('start rotate')
-        msg_wheels_cmd = WheelsCmdStamped()
         self.log(self.ang_remain)
+        msg_wheels_cmd = Twist2DStamped()
         if (self.ang_remain == 0):
             self.ang_remain = np.pi/2
-        if (self.ang_remain <= 0.15):
+            self.log('start rotate')
+        elif (self.ang_remain <= 0.2):
             self.stage = next_stage
-            msg_wheels_cmd.vel_right = 0
-            msg_wheels_cmd.vel_left = 0
+            msg_wheels_cmd.v = 0
+            msg_wheels_cmd.omega = 0
             self.ang_remain = 0
             self.log('done rotating')
         else:
+            self.log('rotate')
             if (dir == 'ccw'):
-                msg_wheels_cmd.vel_right = 0.4
-                msg_wheels_cmd.vel_left = -0.4
+                msg_wheels_cmd.v = 0
+                msg_wheels_cmd.omega = 8
             else:
-                msg_wheels_cmd.vel_right = -0.4
-                msg_wheels_cmd.vel_left = 0.4
-        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+                msg_wheels_cmd.v = 0
+                msg_wheels_cmd.omega = -8
+        self.pub_kinematics.publish(msg_wheels_cmd)
+        rate = rospy.Rate(30)
+        rate.sleep()
+        # msg_wheels_cmd = WheelsCmdStamped()
+        # msg_wheels_cmd.vel_right = 0
+        # msg_wheels_cmd.vel_left = 0
+        # self.pub_wheels_cmd.publish(msg_wheels_cmd)
+        # rate = rospy.Rate(20)
+        # rate.sleep()
+
 
     def go_circle(self, next_stage):
         self.log('start circle')
-        msg_wheels_cmd = WheelsCmdStamped()
+        msg_wheels_cmd = Twist2DStamped()
         if (self.dist_remain == 0):
-            self.dist_remain = 2*np.pi*0.7
+            self.dist_remain = 2*np.pi*0.35
         if (self.dist_remain >= -0.1 and self.dist_remain <= 0.2):
             self.stage = next_stage
-            msg_wheels_cmd.vel_right = 0
-            msg_wheels_cmd.vel_left = 0
+            msg_wheels_cmd.v = 0
+            msg_wheels_cmd.omega = 0
             self.dist_remain = 0
             self.log('done with circle')
         else:
-            msg_wheels_cmd.vel_right = 0.3
-            msg_wheels_cmd.vel_left = 0.5
+            msg_wheels_cmd.v = 0.3
+            msg_wheels_cmd.omega = -5
             
-        self.pub_wheels_cmd.publish(msg_wheels_cmd)
+        self.pub_kinematics.publish(msg_wheels_cmd)
+        rate = rospy.Rate(30)
+        rate.sleep()
         
 
     # https://docs.duckietown.org/daffy/duckietown-robotics-development/out/new_duckiebot_functionality.html
@@ -293,9 +277,9 @@ class OdometryNode(DTROS):
         Publishes a zero velocity command at shutdown."""
         try:
             for i in range(15):
-                msg_wheels_cmd = WheelsCmdStamped()
-                msg_wheels_cmd.vel_right = 0
-                msg_wheels_cmd.vel_left = 0
+                msg_wheels_cmd = Twist2DStamped()
+                msg_wheels_cmd.v = 0
+                msg_wheels_cmd.omega = 0
                 self.pub_wheels_cmd.publish(msg_wheels_cmd)
         except:
             super(OdometryNode, self).on_shutdown()
@@ -305,14 +289,10 @@ class OdometryNode(DTROS):
 if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
     rate = rospy.Rate(30)
-    node.run(rate)
-
-    #rospy.spin()
-
-    # # Keep it spinning to keep the node alive
+    # Keep it spinning to keep the node alive
     
-    # #rospy.spin()
-    # try:
-    #     node.run(rate)
-    # except rospy.ROSInterruptException:
-    #     pass
+    #rospy.spin()
+    try:
+        node.run(rate)
+    except rospy.ROSInterruptException:
+        pass
