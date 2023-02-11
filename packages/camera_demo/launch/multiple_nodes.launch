@@ -1,0 +1,9 @@
+<launch>
+
+  <group ns="$(arg veh)">  
+
+    <node pkg="camera_demo" type="camera_subscriber_node.py" name="camera_subscriber_node" output="screen"/>
+
+  </group>
+
+</launch>

@@ -1,0 +1,12 @@
+<package format="2">
+  <name>my_package</name>
+  <version>1.0.0</version>
+  <description>
+    Subscribs the the camera and publishes both the camera info and a grayscale compress jpeg
+  </description>
+  <maintainer email="sergeykhlynovskiy@gmail.com">sergey khlynovskiy</maintainer>
+  <license>GPL3</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
