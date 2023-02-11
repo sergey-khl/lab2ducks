@@ -55,8 +55,9 @@ class BasicMovemenNode(DTROS):
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
 
         # -- ROS Bag -- 
-        self.bag_name = f'/{self.veh_name}/robot_data.bag'
-        self.bag = rosbag.Bag(self.bag_name)
+        # self.bag_name = f'/{self.veh_name}/robot_data.bag'
+        self.bag_name = 'test.bag'
+        self.bag = rosbag.Bag(self.bag_name, 'w')
 
     def cb_encoder_data(self, msg: WheelEncoderStamped, wheel: str):
         '''
