@@ -305,7 +305,7 @@ if __name__ == '__main__':
     node.run()
 
     # Plotting the rosbag data
-    node.read_from_bag()
+    #node.read_from_bag()
 
     rospy.spin()
     rospy.signal_shutdown('Done Everything!')
