@@ -8,6 +8,8 @@ from duckietown.dtros import DTROS, NodeType
 from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPattern
 from std_msgs.msg import Header, String
 from duckietown_msgs.srv import ChangePattern
+from pathlib import Path
+
 
 
 # References: https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/wheel_odometry.py
@@ -68,10 +70,12 @@ class BasicMovemenNode(DTROS):
         rospy.wait_for_service(led_service)
         self.led_pattern = rospy.ServiceProxy(led_service, ChangePattern)
 
-        # -- ROS Bag -- 
-        # self.bag_name = f'/{self.veh_name}/robot_data.bag'
-        self.bag_name = 'test.bag'
-        self.bag = rosbag.Bag(self.bag_name, 'w')
+        # -- ROS Bag -- (https://codeberg.org/akemi/duckietown/src/commit/70507322806ae0ff4e39fcbfa4bada3a7328a179/lab2/heartbeat-ros/packages/odometry_node/src/odometry_publisher_node.py)
+        bag_name = time.ctime().replace(' ', '_').replace(':', '-')
+        bag_filename = f'/data/bags/odometry_at_{bag_name}.bag'
+        Path(bag_filename).parent.mkdir(parents=True, exist_ok=True)
+        self.bag = rosbag.Bag(bag_filename, 'w')
+        rospy.loginfo(f"Made a bag {self.bag}")
 
     def cb_encoder_data(self, msg: WheelEncoderStamped, wheel: str):
         '''
