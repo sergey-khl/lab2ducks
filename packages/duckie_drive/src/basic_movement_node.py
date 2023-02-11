@@ -9,7 +9,9 @@ from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPatter
 from std_msgs.msg import Header, String
 from duckietown_msgs.srv import ChangePattern
 
+
 # References: https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/wheel_odometry.py
+
 
 class BasicMovemenNode(DTROS):
 
@@ -35,19 +37,31 @@ class BasicMovemenNode(DTROS):
         self.robot_frame = {'x': 0, 'y': 0, 'theta': 0}
 
         # -- Subscribers -- 
-        self.sub_encoder_ticks_left = rospy.Subscriber(f'/{self.veh_name}/left_wheel_encoder_node/tick',
-                                                       WheelEncoderStamped, self.cb_encoder_data,
-                                                       callback_args='left', queue_size=1)
+        self.sub_encoder_ticks_left = rospy.Subscriber(
+            f'/{self.veh_name}/left_wheel_encoder_node/tick',
+            WheelEncoderStamped, self.cb_encoder_data,
+            callback_args='left', 
+            queue_size=1
+        )
         
-        self.sub_encoder_ticks_right = rospy.Subscriber(f'/{self.veh_name}/right_wheel_encoder_node/tick',
-                                                        WheelEncoderStamped, self.cb_encoder_data,
-                                                        callback_args='right', queue_size=1)
+        self.sub_encoder_ticks_right = rospy.Subscriber(
+            f'/{self.veh_name}/right_wheel_encoder_node/tick',
+            WheelEncoderStamped, self.cb_encoder_data,
+            callback_args='right', 
+            queue_size=1
+        )
 
         # -- Publishers -- 
-        self.pub_wheel_commands = rospy.Publisher(f'/{self.veh_name}/wheels_driver_node/wheels_cmd',
-                                                  WheelsCmdStamped, queue_size=1)
-        self.led = rospy.Publisher(f'/{self.veh_name}/led_emitter_node/led_pattern',
-                                   LEDPattern, queue_size=1)
+        self.pub_wheel_commands = rospy.Publisher(
+            f'/{self.veh_name}/wheels_driver_node/wheels_cmd',
+            WheelsCmdStamped, 
+            queue_size=1
+        )
+        self.led = rospy.Publisher(
+            f'/{self.veh_name}/led_emitter_node/led_pattern',
+            LEDPattern,
+            queue_size=1
+        )
 
         # -- Proxy -- 
         led_service = f'/{self.veh_name}/led_controller_node/led_pattern'
