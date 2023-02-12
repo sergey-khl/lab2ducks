@@ -115,7 +115,6 @@ class BasicMovemenNode(DTROS):
         self.traveled_distance[wheel] += dist
         #rospy.loginfo(wheel+ ' d ' + str(self.traveled_distance[wheel]))
 
-
         # updating the robot frame coordinates & the world frame coordinates
         self.update_coordinates()
 
@@ -321,15 +320,19 @@ class BasicMovemenNode(DTROS):
 
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
-        angle_fix = np.deg2rad(10)
-        dis_rot_distance = (2*np.pi - 4*angle_fix)*(self._baseline/2) / 4 
-        self.rotate(rate, dis_rot_distance, vel_left=0.6, vel_right=0)
-        # # TODO: does removing stop() mess up with the travelling
-        # #self.stop()
+        # angle_fix = np.deg2rad(10)
+        # dis_rot_distance = (2*np.pi - 4*angle_fix)*(self._baseline/2) / 4 
 
-        # # move forward
-        # self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
+        # self.rotate(rate, dis_rot_distance, vel_left=0.6, vel_right=0)
         # self.stop(0.2)
+
+        # # TODO: does removing stop() mess up with the travelling
+        #
+
+        # move forward
+        self.desired_distance = 0.199805
+        self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.4)
+        self.stop(0.2)
 
         # # turning counter-clockwise
         # self.rotate(rate, dis_rot_distance, vel_left=0.45,
