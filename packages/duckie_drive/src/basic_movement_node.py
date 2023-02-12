@@ -296,6 +296,7 @@ class BasicMovemenNode(DTROS):
             print('Rosbag data:', topic, msg, t)
         self.bag.close()
 
+
     def turn90(self, clockwise: bool = True ):
         start = time.time()
         end = start
@@ -306,7 +307,6 @@ class BasicMovemenNode(DTROS):
         while end-start < 1:
             self.move(vel_left, vel_right)
             end = time.time()
-
 
         self.stop(0)
 
