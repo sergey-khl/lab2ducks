@@ -296,6 +296,20 @@ class BasicMovemenNode(DTROS):
             print('Rosbag data:', topic, msg, t)
         self.bag.close()
 
+    def turn90(self, clockwise: bool = True ):
+        start = time.time()
+        end = start
+
+        if clockwise:
+            vel_left, vel_right = 0.4 , -0.4
+
+        while end-start < 1:
+            self.move(vel_left, vel_right)
+            end = time.time()
+
+
+        self.stop(0)
+
 
     def run(self):
         '''
@@ -308,21 +322,23 @@ class BasicMovemenNode(DTROS):
         # stop for 5 seconds
         # self.stop(seconds=2)
 
+        self.turn()
+
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
-        dis_rot_distance = 2*np.pi*self._radius / 4 
-        self.rotate(rate, dis_rot_distance, vel_left=0.8, vel_right=0)
-        # TODO: does removing stop() mess up with the travelling
-        #self.stop()
+        # dis_rot_distance = 2*np.pi*self._radius / 4 
+        # self.rotate(rate, dis_rot_distance, vel_left=0.8, vel_right=0)
+        # # TODO: does removing stop() mess up with the travelling
+        # #self.stop()
 
-        # move forward
-        self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
-        self.stop(0.2)
+        # # move forward
+        # self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
+        # self.stop(0.2)
 
-        # turning counter-clockwise
-        self.rotate(rate, dis_rot_distance, vel_left=0.45,
-                    vel_right=-0.45, clockwise=False)
-        self.stop(0.2)
+        # # turning counter-clockwise
+        # self.rotate(rate, dis_rot_distance, vel_left=0.45,
+        #             vel_right=-0.45, clockwise=False)
+        # self.stop(0.2)
 
         # move forward
         # self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
