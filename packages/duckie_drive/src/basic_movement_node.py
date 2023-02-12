@@ -329,7 +329,7 @@ class BasicMovemenNode(DTROS):
         # # TODO: does removing stop() mess up with the travelling
 
         # move forward
-        self.desired_distance = 0.199805
+        self.desired_distance = 1
         self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.4)
         self.stop(0.2)
 

@@ -9,12 +9,13 @@ from sensor_msgs.msg import CameraInfo
 from sensor_msgs.msg import CompressedImage
 from std_msgs.msg import String
 
-hostname = os.environ['VEHICLE_NAME']
 
 class CameraSubscriberNode(DTROS):
     def __init__(self, node_name):
         # initialize the DTROS parent class
         super(CameraSubscriberNode, self).__init__(node_name=node_name, node_type=NodeType.GENERIC)
+
+        self.veh_name = rospy.get_namespace().strip("/")
 
         # -- Publishers -- 
         self.pub_info = rospy.Publisher(
@@ -52,24 +53,24 @@ class CameraSubscriberNode(DTROS):
         self.pub_info.publish(img_dims)
 
 
-def callback_camera_compressed(self, compressed):
-    # Convert the compressed image data into a NumPy array of bytes
-    raw_bytes = np.frombuffer(compressed.data, dtype=np.uint8)
+    def callback_camera_compressed(self, compressed):
+        # Convert the compressed image data into a NumPy array of bytes
+        raw_bytes = np.frombuffer(compressed.data, dtype=np.uint8)
 
-    # Decode the image data into a OpenCV image
-    cv_img = cv2.imdecode(raw_bytes, cv2.IMREAD_COLOR)
-    
-    # Convert the image from color to grayscale
-    mono_cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
-    
-    # Re-compress the image in JPEG format and convert it into a bytes object
-    mono_raw = cv2.imencode('.jpeg', mono_cv_img)[1].tobytes()
+        # Decode the image data into a OpenCV image
+        cv_img = cv2.imdecode(raw_bytes, cv2.IMREAD_COLOR)
+        
+        # Convert the image from color to grayscale
+        mono_cv_img = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
+        
+        # Re-compress the image in JPEG format and convert it into a bytes object
+        mono_raw = cv2.imencode('.jpeg', mono_cv_img)[1].tobytes()
 
-    # Update the compressed image data with the new grayscale image data
-    compressed.data = mono_raw
-    
-    # Publish the grayscale image data to a ROS topic
-    self.pub_comp.publish(compressed)
+        # Update the compressed image data with the new grayscale image data
+        compressed.data = mono_raw
+        
+        # Publish the grayscale image data to a ROS topic
+        self.pub_comp.publish(compressed)
 
 
 if __name__ == '__main__':
