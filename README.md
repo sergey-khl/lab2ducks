@@ -2,7 +2,7 @@
 
 Implementation of different components of ROS, and the basic application of differential drive kinematics and odometry.
 
-## Run 
+## Run on your Duckiebot
 1. Run the LED demo to get the led_pattern service started:
   * ```shell 
     dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8
