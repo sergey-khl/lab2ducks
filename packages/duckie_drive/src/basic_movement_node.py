@@ -257,13 +257,7 @@ class BasicMovemenNode(DTROS):
             self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
         
         # update global frame
-        robot_frame_vec = np.array([[self.robot_frame['x']], [self.robot_frame['y']], [1]])
-        global_frame_vec = np.array([[0, -1, -0.32],[1, 0, -0.32],[0, 0, 1]])*robot_frame_vec
-        global_frame_vec[2] = self.robot_frame['theta'] - np.pi/2
-        self.log(self.robot_frame)
-        self.global_frame['x'] = global_frame_vec[0]
-        self.global_frame['y'] = global_frame_vec[1]
-        self.global_frame['theta'] = global_frame_vec[2]
+        self.initial_to_global()
 
         # recording in the rosbag
         self.write_in_bag()
@@ -282,9 +276,9 @@ class BasicMovemenNode(DTROS):
             theta = Float64()
             theta.data = self.global_frame['theta']
 
-            self.bag.write('x coordinate: ', x)
-            self.bag.write('y coordinate: ', y)
-            self.bag.write('orientation: ', theta)
+            self.bag.write('x', x)
+            self.bag.write('y', y)
+            #self.bag.write('orientation: ', theta)
 
         except Exception as e:
             print(f'This is the error message for bag: {e}')
@@ -297,18 +291,17 @@ class BasicMovemenNode(DTROS):
         self.bag.close()
 
 
-    def turn90(self, clockwise: bool = True ):
-        start = time.time()
-        end = start
+    def initial_to_global(self):
+        initial_frame_cord = np.array([self.robot_frame['x'], self.robot_frame['y'], 1]).transpose()
+        transformation_mat = np.array([[0, -1, 0.32],[1, 0, -0.32],[0, 0, 1]])
+        global_frame_angle = self.robot_frame['theta'] + np.pi/2
+        global_frame_cord = transformation_mat @ initial_frame_cord
+        self.global_frame['x'] = global_frame_cord[0]
+        self.global_frame['y'] = global_frame_cord[1]
+        self.global_frame['theta'] = global_frame_angle
 
-        if clockwise:
-            vel_left, vel_right = 0.4 , -0.4
-
-        while end-start < 1:
-            self.move(vel_left, vel_right)
-            end = time.time()
-
-        self.stop(0)
+        rospy.loginfo(self.robot_frame)
+        rospy.loginfo(self.global_frame)
 
 
     def run(self):
@@ -326,8 +319,8 @@ class BasicMovemenNode(DTROS):
 
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
-        # dis_rot_distance = 2*np.pi*self._radius / 4 
-        # self.rotate(rate, dis_rot_distance, vel_left=0.8, vel_right=0)
+        dis_rot_distance = 2*np.pi*self._radius / 4 
+        self.rotate(rate, dis_rot_distance, vel_left=0.8, vel_right=0)
         # # TODO: does removing stop() mess up with the travelling
         # #self.stop()
 
@@ -382,7 +375,7 @@ if __name__ == '__main__':
     node.run()
 
     # Plotting the rosbag data
-    #node.read_from_bag()
+    node.read_from_bag()
 
     #rospy.spin()
     node.bag.close()
