@@ -7,8 +7,14 @@ Implementation of different components of ROS, and the basic application of diff
   * ```shell 
        dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8
     ```   
-2. $ dts devel build -f -H MY_ROBOT.local
-$ dts devel run -H MY_ROBOT.local
+2. build it:
+  * ```shell 
+       dts devel build -f -H MY_ROBOT.local
+    ```   
+$ run it:
+  * ```shell 
+       dts devel run -H MY_ROBOT.local
+    ```   
 
 ## References 🫡:
 - [LED node](https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/led_node.py)
