@@ -34,7 +34,7 @@ class BasicMovemenNode(DTROS):
         self.prev_values = {'left': 0, 'right': 0} # wheel encoder value at time t-1
         self.d = {'left': 0, 'right': 0} # distance traveled between time t-1 and t
         self.traveled_distance = {'left': 0, 'right': 0} # total distance traveled by each wheel
-        self.robot_frame = {'x': 0, 'y': 0, 'theta': 0} # (x,y) translation and orientation of robot in its frame
+        self.robot_frame = {'x': 0, 'y': 0, 'theta': np.pi/2} # (x,y) translation and orientation of robot in its frame
         self.global_frame = {'x': 0, 'y': 0, 'theta': 0} # (x,y) translation and orientation of robot in world frame 
 
         # -- Subscribers -- 
@@ -239,8 +239,9 @@ class BasicMovemenNode(DTROS):
             self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
         
         # update global frame
-        robot_frame_vec = np.array([[self.robot_frame['x']], [self.robot_frame['y']], [self.robot_frame['theta']]])
-        global_frame_vec = np.array([[0, -1, -0.32],[1, 0, -0.32],[0, 0, 1+2/np.pi]])*robot_frame_vec
+        robot_frame_vec = np.array([[self.robot_frame['x']], [self.robot_frame['y']], [1]]]])
+        global_frame_vec = np.array([[0, -1, -0.32],[1, 0, -0.32],[0, 0, 1]])*robot_frame_vec
+        global_frame_vec[2] = self.robot_frame['theta'] - np.pi/2
 
         rospy.loginfo(f"robot cord {robot_frame_vec}")
         rospy.loginfo(f"global cord {global_frame_vec}")
