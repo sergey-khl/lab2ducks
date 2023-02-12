@@ -249,6 +249,18 @@ class BasicMovemenNode(DTROS):
         msg.data = color
         self.led_pattern(msg)
 
+    def initial_to_global(self):
+        initial_frame_cord = np.array([self.robot_frame['x'], self.robot_frame['y'], 1]).transpose()
+        transformation_mat = np.array([[0, -1, 0.32],[1, 0, -0.32],[0, 0, 1]])
+        global_frame_angle = (self.robot_frame['theta'] + np.pi/2) % 2*np.pi
+        global_frame_cord = transformation_mat @ initial_frame_cord
+        self.global_frame['x'] = global_frame_cord[0]
+        self.global_frame['y'] = global_frame_cord[1]
+        self.global_frame['theta'] = global_frame_angle
+
+        rospy.loginfo(self.robot_frame)
+        rospy.loginfo(self.global_frame)
+
 
     def update_coordinates(self):
         '''
@@ -323,20 +335,20 @@ class BasicMovemenNode(DTROS):
         correction_factor = np.deg2rad(30)
         dis_rot_distance = ((2*np.pi-correction_factor*4)*self._baseline/2) / 4
 
-        self.rotate(rate, 2, vel_left=0.5, vel_right=-0.5)
-        self.stop(0.2)
+        self.rotate(rate, 0.5, vel_left=0.5, vel_right=-0.5)
+        self.stop()
 
         # TODO: does removing stop() mess up with the travelling
         #self.stop()
 
         # move forward
-        self.forward(rate, 2, vel_left=0.4, vel_right=0.42)
-        self.stop(0.2)
+        self.forward(rate, 3, vel_left=0.4, vel_right=0.42)
+        self.stop()
 
         # turning counter-clockwise
         self.rotate(rate, 0.5, vel_left=0.45,
                     vel_right=-0.45, clockwise=False)
-        self.stop(0.2)
+        self.stop()
 
         # move forward
         # self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
@@ -380,7 +392,7 @@ if __name__ == '__main__':
     node.run()
 
     # Plotting the rosbag data
-    #node.read_from_bag()
+    node.read_from_bag()
 
     #rospy.spin()
     node.bag.close()

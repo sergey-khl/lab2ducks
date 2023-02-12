@@ -78,6 +78,7 @@ class LEDNode(DTROS):
         return ChangePatternResponse()
 
 
+
 if __name__ == "__main__":
     node = LEDNode(node_name="led_node")
     rospy.spin()
