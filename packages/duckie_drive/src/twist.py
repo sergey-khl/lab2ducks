@@ -83,11 +83,11 @@ class GoRobot(DTROS):
         # -- Subscribers --
         self.sub_pose = rospy.Subscriber(
             pose, 
-            Odometry,
+            Pose2DStamped,
             self.cb_encoder_data
         )
         
-
+    
         # -- Proxy -- 
         led_service = f'/{self.veh_name}/led_controller_node/led_pattern'
         rospy.wait_for_service(led_service)
@@ -133,7 +133,7 @@ class GoRobot(DTROS):
         # self.global_frame['y'] += dA*np.sin(self.global_frame['theta'])
         # self.global_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
         # self.global_frame['theta'] %= 2*np.pi
-        print('doifhsdufh')
+
         # if self.dist_remain > 0:
         #     self.dist_remain -= self.dx_right
         self.log(msg)
@@ -358,7 +358,7 @@ class GoRobot(DTROS):
 
 if __name__ == '__main__':
     node = GoRobot(node_name='twisting_node')
-    rate = rospy.Rate(30)
+    rate = rospy.Rate(3)
     node.run(rate)
 
     #rospy.spin()
