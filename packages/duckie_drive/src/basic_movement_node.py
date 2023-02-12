@@ -239,7 +239,7 @@ class BasicMovemenNode(DTROS):
             self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
         
         # update global frame
-        robot_frame_vec = np.array([[self.robot_frame['x']], [self.robot_frame['y']], [1]]]])
+        robot_frame_vec = np.array([[self.robot_frame['x']], [self.robot_frame['y']], [1]])
         global_frame_vec = np.array([[0, -1, -0.32],[1, 0, -0.32],[0, 0, 1]])*robot_frame_vec
         global_frame_vec[2] = self.robot_frame['theta'] - np.pi/2
 
