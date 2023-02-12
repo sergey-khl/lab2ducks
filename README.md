@@ -1,8 +1,8 @@
-# CMPUT 412: Exercise 2 - Ros Development and Kinematics 🫡 🤖
+# 🤖 CMPUT 412: Exercise 2 - Ros Development and Kinematics 🤖
 
-# Made using:[this template](https://github.com/duckietown/template-basic)
+# Made using: [this template](https://github.com/duckietown/template-basic)
 
-## References:
+## References 🫡:
 - [LED node](https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/led_node.py)
 - [Wheel Odometry](https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/wheel_odometry.py)
 - [Robot Kinematics]( https://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf)
