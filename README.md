@@ -16,7 +16,7 @@ Implementation of different components of ROS, and the basic application of diff
     dts devel run -H MY_ROBOT.local
     ```   
 
-## References 🫡:
+## References 🫡
 - [LED node](https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/led_node.py)
 - [Wheel Odometry](https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/wheel_odometry.py)
 - [Robot Kinematics]( https://www.cs.columbia.edu/~allen/F17/NOTES/icckinematics.pdf)
