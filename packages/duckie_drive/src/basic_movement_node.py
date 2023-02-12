@@ -310,13 +310,8 @@ class BasicMovemenNode(DTROS):
 
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
-
-        correction_factor = np.deg2rad(30)
-        dis_rot_distance = ((2*np.pi-correction_factor*4)*self._baseline/2) / 4
-
-        self.rotate(rate, dis_rot_distance, vel_left=0.45, vel_right=-0.45)
-        self.stop(0.2)
-
+        dis_rot_distance = 2*np.pi*self._radius / 4 
+        self.rotate(rate, dis_rot_distance, vel_left=0.8, vel_right=0)
         # TODO: does removing stop() mess up with the travelling
         #self.stop()
 
