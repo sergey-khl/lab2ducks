@@ -13,7 +13,7 @@ Implementation of different components of ROS, and the basic application of diff
     ```   
 $ run it:
   * ```shell 
-       dts devel run -H MY_ROBOT.local
+    dts devel run -H MY_ROBOT.local
     ```   
 
 ## References 🫡:
