@@ -298,7 +298,7 @@ class BasicMovemenNode(DTROS):
     def initial_to_global(self):
         initial_frame_cord = np.array([self.robot_frame['x'], self.robot_frame['y'], 1]).transpose()
         transformation_mat = np.array([[0, -1, 0.32],[1, 0, -0.32],[0, 0, 1]])
-        global_frame_angle = self.robot_frame['theta'] + np.pi/2
+        global_frame_angle = (self.robot_frame['theta'] + np.pi/2) % 2*np.pi
         global_frame_cord = transformation_mat @ initial_frame_cord
         self.global_frame['x'] = global_frame_cord[0]
         self.global_frame['y'] = global_frame_cord[1]
@@ -321,7 +321,8 @@ class BasicMovemenNode(DTROS):
 
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
-        dis_rot_distance = 2*np.pi*(self._baseline/2) / 4 
+        angle_fix = np.deg2rad(10s)
+        dis_rot_distance = (2*np.pi - 4*angle_fix)*(self._baseline/2) / 4 
         self.rotate(rate, dis_rot_distance, vel_left=0.6, vel_right=0)
         # # TODO: does removing stop() mess up with the travelling
         # #self.stop()
