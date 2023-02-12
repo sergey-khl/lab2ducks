@@ -240,7 +240,7 @@ class BasicMovemenNode(DTROS):
         
         # update global frame
         robot_frame_vec = np.array([[self.robot_frame['x']], [self.robot_frame['y']], [self.robot_frame['theta']]])
-        global_frame_vec = np.array([0, -1, 0],[1, 0, 0],[0, 0, 1+2/np.pi])*robot_frame_vec
+        global_frame_vec = np.array([[0, -1, 0],[1, 0, 0],[0, 0, 1+2/np.pi]])*robot_frame_vec
 
         rospy.loginfo(f"global cord {robot_frame_vec}")
         rospy.loginfo(f"global cord {global_frame_vec}")
