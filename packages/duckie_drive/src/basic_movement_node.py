@@ -191,6 +191,10 @@ class BasicMovemenNode(DTROS):
         # TODO: having only one condition helps?
         #  (self.traveled_distance['left'] < desired_distance and
         #    self.traveled_distance['right'] > -desired_distance)
+        start = time.time()
+        end = start
+
+
         if clockwise:
             while not rospy.is_shutdown() and self.traveled_distance['left'] < desired_distance:
                 self.move(vel_left=vel_left, vel_right=vel_right)

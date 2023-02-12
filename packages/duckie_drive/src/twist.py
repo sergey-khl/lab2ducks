@@ -58,6 +58,11 @@ class GoRobot(DTROS):
             'theta': 0
         }
 
+        self.prev_pos = Odometry()
+        self.first_message = True
+        self.orig_x = 0
+        self.orig_y = 0
+
         self.dist_remain = 0
         self.ang_remain = 0
         self.stage = 0
@@ -84,9 +89,9 @@ class GoRobot(DTROS):
         self.sub_pose = rospy.Subscriber(
             pose, 
             Odometry,
-            self.cb_encoder_data
+            self.cb_encoder_data,
+            queue_size=10
         )
-        
 
         # -- Proxy -- 
         led_service = f'/{self.veh_name}/led_controller_node/led_pattern'
@@ -108,7 +113,17 @@ class GoRobot(DTROS):
     def cb_encoder_data(self, msg):
         """ Update encoder distance information from ticks.
         """
-        # if (self.left_last_data != 0):
+        if self.first_message:
+            self.first_message = False
+            self.orig_x = msg.pose.pose.position.x
+            self.orig_y = msg.pose.pose.position.y
+            return
+            
+        time = (msg.header.stamp - self.prev_pos.header.stamp).to_sec()
+        self.global_frame['x'] = msg.twist.twist.linear.x - self.orig_x
+        self.global_frame['y'] = msg.twist.twist.linear.y - self.orig_y
+        self.global_frame['theta'] += msg.twist.twist.angular.z*time
+        self.global_frame['theta'] %= 2*np.pi
         #     self.left_tick = msgLeft.data-self.left_last_data
         # self.left_last_data = msgLeft.data
         # self.dx_left = self.left_dir*self.left_tick*self._radius*2*np.pi/msgLeft.resolution
@@ -124,8 +139,8 @@ class GoRobot(DTROS):
         # self.robot_frame['y'] = 0
         # self.robot_frame['theta'] = (self.dx_right - self.dx_left)/(2*self._length)
 
-        # if self.ang_remain > 0:
-        #     self.ang_remain -= np.abs(self.robot_frame['theta'])
+        if self.ang_remain > 0:
+            self.ang_remain -= np.abs(msg.twist.twist.angular.z*time)
 
         # self.robot_frame['theta'] %= 2*np.pi
 
@@ -133,13 +148,14 @@ class GoRobot(DTROS):
         # self.global_frame['y'] += dA*np.sin(self.global_frame['theta'])
         # self.global_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
         # self.global_frame['theta'] %= 2*np.pi
-        print('doifhsdufh')
-        # if self.dist_remain > 0:
-        #     self.dist_remain -= self.dx_right
-        self.log(msg)
+
+        if self.dist_remain > 0:
+            self.dist_remain -= np.abs(msg.twist.twist.linear.x - self.orig_x)
 
         # # recording in the rosbag
         # self.write_in_bag()
+        self.prev_pos = msg
+        
 
 
     def change_led_lights(self, color: str):
@@ -295,9 +311,9 @@ class GoRobot(DTROS):
         
 
     def rotate(self, next_stage, dir):
-        self.log('start rotate')
+        #self.log('start rotate')
         twist = Twist2DStamped()
-        self.log(self.ang_remain)
+        #self.log(self.ang_remain)
         if (self.ang_remain == 0):
             self.ang_remain = np.pi/2
         if (self.ang_remain <= 0.15):
@@ -305,14 +321,14 @@ class GoRobot(DTROS):
             twist.v = 0
             twist.omega = 0
             self.ang_remain = 0
-            self.log('done rotating')
+            #self.log('done rotating')
         else:
             if (dir == 'ccw'):
                 twist.v = 0
-                twist.omega = -8
+                twist.omega = 10
             else:
                 twist.v = 0
-                twist.omega = 8
+                twist.omega = -10
         self.pub_twist.publish(twist)
         self.pub_kin.publish(twist)
 
