@@ -52,9 +52,10 @@ class GoRobot(DTROS):
             'theta': 0
         }
 
+# change back to .32 .32
         self.global_frame = {
-            'x': 0.32,
-            'y': 0.32,
+            'x': 0,
+            'y': 0,
             'theta': 0
         }
 
@@ -120,8 +121,8 @@ class GoRobot(DTROS):
             return
             
         time = (msg.header.stamp - self.prev_pos.header.stamp).to_sec()
-        self.global_frame['x'] = msg.twist.twist.linear.x - self.orig_x
-        self.global_frame['y'] = msg.twist.twist.linear.y - self.orig_y
+        self.global_frame['x'] += msg.pose.pose.position.x - self.prev_pos.pose.pose.position.x
+        self.global_frame['y'] += msg.pose.pose.position.y - self.prev_pos.pose.pose.position.y
         self.global_frame['theta'] += msg.twist.twist.angular.z*time
         self.global_frame['theta'] %= 2*np.pi
         #     self.left_tick = msgLeft.data-self.left_last_data
@@ -150,7 +151,7 @@ class GoRobot(DTROS):
         # self.global_frame['theta'] %= 2*np.pi
 
         if self.dist_remain > 0:
-            self.dist_remain -= np.abs(msg.twist.twist.linear.x - self.orig_x)
+            self.dist_remain -= np.sqrt((msg.pose.pose.position.x - self.prev_pos.pose.pose.position.x)**2+(msg.pose.pose.position.y - self.prev_pos.pose.pose.position.y)**2)
 
         # # recording in the rosbag
         # self.write_in_bag()
@@ -191,7 +192,8 @@ class GoRobot(DTROS):
             #wait 
             if (self.stage == 0):
                 #self.do_nothing()
-                self.stop_being_silly(1, 1/5)
+                self.move_forward(-1)
+                #self.stop_being_silly(1, 1/5)
                 # box movement
             elif (self.stage == 1):
                 self.rotate(2, 'cw')
@@ -255,17 +257,17 @@ class GoRobot(DTROS):
             self.dist_remain = 0
             self.log('done moving forward')
         else:
-            # if (self.robot_frame['y'] > 0.05):
-            #     self.log('too left')
-            #     msg_wheels_cmd.vel_right = 0.4
-            #     msg_wheels_cmd.vel_left = 0.3
-            # elif (self.robot_frame['y'] < -0.05):
-            #     self.log('too right')
-            #     msg_wheels_cmd.vel_right = 0.3
-            #     msg_wheels_cmd.vel_left = 0.4
-            # else:
-            twist.v = .5
-            twist.omega = 0
+            if (self.global_frame['y'] > 0.05):
+                self.log('too left')
+                twist.v = 0.45
+                twist.omega = -2
+            elif (self.global_frame['y'] < -0.05):
+                self.log('too right')
+                twist.v = 0.45
+                twist.omega = 2
+            else:
+                twist.v = .5
+                twist.omega = 0
         self.pub_twist.publish(twist)
 
 
@@ -277,11 +279,11 @@ class GoRobot(DTROS):
             twist.vel_right = 0
             
         else:
-            if (self.robot_frame['y'] > 0.01):
+            if (self.robot_frame['x'] > 0.0):
                 twist.vel_left = .5
                 twist.vel_right = -3
 
-            elif (self.robot_frame['y'] < -0.01):
+            elif (self.robot_frame['x'] < -0.01):
                 twist.vel_left = .5
                 twist.vel_right = 3
 

@@ -172,7 +172,7 @@ class BasicMovemenNode(DTROS):
             end = time.time()
 
 
-    def rotate(self, rate: rospy.Rate, desired_distance: float, vel_left: float = 0.2,
+    def rotate(self, rate: rospy.Rate, seconds: float, vel_left: float = 0.2,
                vel_right: float = -0.2, clockwise: bool = True):
         '''
         Rotating by the specified distance.
@@ -196,19 +196,22 @@ class BasicMovemenNode(DTROS):
 
 
         if clockwise:
-            while not rospy.is_shutdown() and self.traveled_distance['left'] < desired_distance:
+            while not rospy.is_shutdown() and (end - start) < seconds:
                 self.move(vel_left=vel_left, vel_right=vel_right)
                 rate.sleep()
+                end = time.time()
         else:
-            while not rospy.is_shutdown() and self.traveled_distance['right'] < desired_distance:
+            while not rospy.is_shutdown() and (end - start) < seconds:
                 self.move(vel_left=vel_left, vel_right=vel_right)
                 rate.sleep()
+                end = time.time()
 
 
 
-    def forward(self, rate: rospy.Rate, desired_distance: float, vel_left: int = 0.43, vel_right: int = 0.42):
+    def forward(self, rate: rospy.Rate, seconds: float, vel_left: int = 0.43, vel_right: int = 0.42):
         '''
-        Going forward by the specified distance & speed 
+        Going forward by the spec
+        ified distance & speed 
         Args:
             rate: an instance of rospy.Rate
             desired_distance: the desired distance the duckiebot should travel
@@ -219,11 +222,13 @@ class BasicMovemenNode(DTROS):
         # changing the LED color to green and clearing the traveled disctance
         self.change_led_lights('green')
         self.clear()
+        start = time.time()
+        end = start
 
-        while not rospy.is_shutdown() and (self.traveled_distance['left'] < desired_distance and
-                                           self.traveled_distance['right'] < desired_distance):
+        while not rospy.is_shutdown() and (end - start) < seconds:
             self.move(vel_left=vel_left, vel_right=vel_right)
             rate.sleep()
+            end = time.time()
 
 
     def change_led_lights(self, color: str):
@@ -318,18 +323,18 @@ class BasicMovemenNode(DTROS):
         correction_factor = np.deg2rad(30)
         dis_rot_distance = ((2*np.pi-correction_factor*4)*self._baseline/2) / 4
 
-        self.rotate(rate, dis_rot_distance, vel_left=0.45, vel_right=-0.45)
+        self.rotate(rate, 2, vel_left=0.5, vel_right=-0.5)
         self.stop(0.2)
 
         # TODO: does removing stop() mess up with the travelling
         #self.stop()
 
         # move forward
-        self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
+        self.forward(rate, 2, vel_left=0.4, vel_right=0.42)
         self.stop(0.2)
 
         # turning counter-clockwise
-        self.rotate(rate, dis_rot_distance, vel_left=0.45,
+        self.rotate(rate, 0.5, vel_left=0.45,
                     vel_right=-0.45, clockwise=False)
         self.stop(0.2)
 
