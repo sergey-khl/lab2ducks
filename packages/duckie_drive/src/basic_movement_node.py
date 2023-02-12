@@ -155,7 +155,7 @@ class BasicMovemenNode(DTROS):
                 WheelsCmdStamped(
                     header=header,
                     vel_left=vel_left_inc*(1+i),
-                    vel_right=vel_right_inc(1+i)
+                    vel_right=vel_right_inc*(1+i)
                 ))
             
             self.rate.sleep()
