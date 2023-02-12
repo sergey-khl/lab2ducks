@@ -106,6 +106,8 @@ class BasicMovemenNode(DTROS):
         diff_value = msg.data - self.prev_values[wheel]
         self.prev_values[wheel] = msg.data
 
+        rospy.loginfo(wheel, diff_value)
+
         #rospy.loginfo(wheel + ' tick ' + str(msg.data))
 
         # caluclates the distance travled
@@ -143,8 +145,8 @@ class BasicMovemenNode(DTROS):
         elif (vel_right < 0): self.dir['right'] = -1
         else: self.dir['right'] = 0 
 
-        vel_left_inc = vel_left_inc/4
-        vel_right_inc = vel_right_inc/4
+        vel_left_inc = vel_left/4
+        vel_right_inc = vel_right/4
 
         for i in range(4):
 
