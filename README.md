@@ -7,11 +7,11 @@ Implementation of different components of ROS, and the basic application of diff
   * ```shell 
     dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8
     ```   
-2. build it:
+2. Build it:
   * ```shell 
     dts devel build -f -H MY_ROBOT.local
     ```   
-$ run it:
+3. Run it:
   * ```shell 
     dts devel run -H MY_ROBOT.local
     ```   
