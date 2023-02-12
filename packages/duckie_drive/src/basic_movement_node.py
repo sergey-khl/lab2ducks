@@ -278,6 +278,7 @@ class BasicMovemenNode(DTROS):
 
             self.bag.write('x', x)
             self.bag.write('y', y)
+            self.bag.write('theta', theta)
             #self.bag.write('orientation: ', theta)
 
         except Exception as e:
@@ -286,7 +287,7 @@ class BasicMovemenNode(DTROS):
 
 
     def read_from_bag(self): 
-        for topic, msg, t in self.bag.read_messages(topics=['x', 'y']):
+        for topic, msg, t in self.bag.read_messages(topics=['x', 'y', 'theta']):
             print('Rosbag data:', topic, msg, t)
         self.bag.close()
 
