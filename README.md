@@ -1,5 +1,11 @@
 # 🤖 CMPUT 412: Exercise 2 - Ros Development and Kinematics 🤖
 
+Implementation of different components of ROS, and the basic application of differential drive kinematics and odometry.
+
+## run 
+1. Run the LED demo to get the led_pattern service started:
+'''dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8'''
+3. 
 
 ## References 🫡:
 - [LED node](https://github.com/anna-ssi/duckiebot/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/led_node.py)
