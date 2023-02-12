@@ -147,8 +147,8 @@ class BasicMovemenNode(DTROS):
         self.pub_wheel_commands.publish(
             WheelsCmdStamped(
                 header=header,
-                vel_left=vel_left_inc*(1+i),
-                vel_right=vel_right_inc*(1+i)
+                vel_left=vel_left,
+                vel_right=vel_right
             ))
             
             
