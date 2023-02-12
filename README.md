@@ -5,11 +5,11 @@ Implementation of different components of ROS, and the basic application of diff
 ## Run 
 1. Run the LED demo to get the led_pattern service started:
   * ```shell 
-       dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8
+    dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8
     ```   
 2. build it:
   * ```shell 
-       dts devel build -f -H MY_ROBOT.local
+    dts devel build -f -H MY_ROBOT.local
     ```   
 $ run it:
   * ```shell 
