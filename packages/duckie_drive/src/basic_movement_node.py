@@ -141,14 +141,19 @@ class BasicMovemenNode(DTROS):
         elif (vel_right < 0): self.dir['right'] = -1
         else: self.dir['right'] = 0 
 
-        header = Header()
-        self.pub_wheel_commands.publish(
-            WheelsCmdStamped(
-                header=header,
-                vel_left=vel_left,
-                vel_right=vel_right
-            ))
+        vel_left_inc = vel_left_inc/4
+        vel_right_inc = vel_right_inc/4
 
+        for i in range(4):
+
+            header = Header()
+            self.pub_wheel_commands.publish(
+                WheelsCmdStamped(
+                    header=header,
+                    vel_left=vel_left_inc*(1+i),
+                    vel_right=vel_right_inc(1+i)
+                ))
+            
 
     def stop(self, seconds: int = None):
         '''
@@ -252,7 +257,7 @@ class BasicMovemenNode(DTROS):
         delta_y = delta_A * np.sin(self.robot_frame['theta'])
 
         self.robot_frame['x'] += delta_x
-        #self.robot_frame['y'] += delta_y
+        self.robot_frame['y'] += delta_y
         self.robot_frame['theta'] = (
             self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
         
@@ -321,7 +326,7 @@ class BasicMovemenNode(DTROS):
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
         dis_rot_distance = 2*np.pi*self._radius / 4 
-        self.rotate(rate, dis_rot_distance, vel_left=0.8, vel_right=0)
+        self.rotate(rate, dis_rot_distance, vel_left=0.5, vel_right=-0.5)
         # # TODO: does removing stop() mess up with the travelling
         # #self.stop()
 
