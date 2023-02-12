@@ -96,7 +96,7 @@ class BasicMovemenNode(DTROS):
         diff_value = msg.data - self.prev_values[wheel]
         self.prev_values[wheel] = msg.data
 
-        rospy.loginfo(f"encoder diff {diff_value}")
+        rospy.loginfo(wheel + ' tick ' + str(msg.data))
 
         # caluclates the distance travled
         dist = 2 * np.pi * self._radius * diff_value / msg.resolution
@@ -104,6 +104,8 @@ class BasicMovemenNode(DTROS):
         # update distance travled 
         self.d[wheel] = dist
         self.traveled_distance[wheel] += dist
+        rospy.loginfo(wheel+ ' d ' + str(self.traveled_distance[wheel]))
+
 
         # updating the robot frame coordinates & the world frame coordinates
         self.update_coordinates()
@@ -243,9 +245,6 @@ class BasicMovemenNode(DTROS):
         global_frame_vec = np.array([[0, -1, -0.32],[1, 0, -0.32],[0, 0, 1]])*robot_frame_vec
         global_frame_vec[2] = self.robot_frame['theta'] - np.pi/2
 
-        rospy.loginfo(f"robot cord {robot_frame_vec}")
-        rospy.loginfo(f"global cord {global_frame_vec}")
-
         self.global_frame['x'] = global_frame_vec[0]
         self.global_frame['y'] = global_frame_vec[1]
         self.global_frame['theta'] = global_frame_vec[2]
@@ -287,15 +286,19 @@ class BasicMovemenNode(DTROS):
         '''
         # publish message every 0.1 second
         # TODO: change the rate value to see if it has any effect
-        rate = rospy.Rate(3)
+        rate = rospy.Rate(30)
 
         # stop for 5 seconds
         # self.stop(seconds=2)
 
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
-        dis_rot_distance = 2*np.pi*self._radius / 4 + 0.174533
-        self.rotate(rate, dis_rot_distance, vel_left=0.8, vel_right=0)
+
+        correction_factor = np.deg2rad(20)
+        dis_rot_distance = ((2*np.pi-correction_factor*4)*self._baseline/2) / 4
+
+        self.rotate(rate, dis_rot_distance, vel_left=0.45, vel_right=-0.45)
+
         # TODO: does removing stop() mess up with the travelling
         self.stop()
 
