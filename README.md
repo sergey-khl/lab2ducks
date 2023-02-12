@@ -5,7 +5,7 @@ Implementation of different components of ROS, and the basic application of diff
 ## Run 
 1. Run the LED demo to get the led_pattern service started:
   * ```python 
-dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8
+       dts duckiebot demo --demo_name led_emitter_node --duckiebot_name $BOT --package_name led_emitter --image duckietown/dt-core:daffy-arm64v8
     ```   
 
 ## References 🫡:
