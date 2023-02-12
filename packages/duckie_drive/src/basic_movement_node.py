@@ -325,8 +325,6 @@ class BasicMovemenNode(DTROS):
         # stop for 5 seconds
         # self.stop(seconds=2)
 
-        self.turn()
-
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
         dis_rot_distance = 2*np.pi*self._radius / 4 
