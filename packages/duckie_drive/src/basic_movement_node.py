@@ -87,8 +87,6 @@ class BasicMovemenNode(DTROS):
         rospy.loginfo(f"Made a bag {self.bag}")
 
 
-        self.rate = rospy.Rate(30)
-
     def cb_encoder_data(self, msg: WheelEncoderStamped, wheel: str):
         '''
         Getting the data from the wheel encoder node 
@@ -106,7 +104,6 @@ class BasicMovemenNode(DTROS):
         diff_value = msg.data - self.prev_values[wheel]
         self.prev_values[wheel] = msg.data
 
-        rospy.loginfo(wheel, diff_value)
 
         #rospy.loginfo(wheel + ' tick ' + str(msg.data))
 
@@ -158,7 +155,7 @@ class BasicMovemenNode(DTROS):
                     vel_right=vel_right_inc*(1+i)
                 ))
             
-            self.rate.sleep()
+            time.sleep(0.033)
             
 
     def stop(self, seconds: int = None):
