@@ -105,6 +105,19 @@ class GoRobot(DTROS):
         self.log("Initialized")
 
 
+    def initial_to_global(self):
+        initial_frame_cord = np.array([self.robot_frame['x'], self.robot_frame['y'], 1]).transpose()
+        transformation_mat = np.array([[0, -1, 0.32],[1, 0, -0.32],[0, 0, 1]])
+        global_frame_angle = self.robot_frame['theta'] + np.pi/2
+        global_frame_cord = transformation_mat @ initial_frame_cord
+        self.global_frame['x'] = global_frame_cord[0]
+        self.global_frame['y'] = global_frame_cord[1]
+        self.global_frame['theta'] = global_frame_angle
+
+        rospy.loginfo(self.robot_frame)
+        rospy.loginfo(self.global_frame)
+
+
     def cb_encoder_data(self, msg):
         """ Update encoder distance information from ticks.
         """
