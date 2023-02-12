@@ -5,7 +5,7 @@ import rospy
 import rosbag
 
 from duckietown.dtros import DTROS, NodeType
-from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPattern
+from duckietown_msgs.msg import WheelEncoderStamped, WheelsCmdStamped, LEDPattern, Twist2DStamped
 from std_msgs.msg import Header, String, Float64
 from duckietown_msgs.srv import ChangePattern
 from pathlib import Path
@@ -34,8 +34,11 @@ class BasicMovemenNode(DTROS):
         self.prev_values = {'left': 0, 'right': 0} # wheel encoder value at time t-1
         self.d = {'left': 0, 'right': 0} # distance traveled between time t-1 and t
         self.traveled_distance = {'left': 0, 'right': 0} # total distance traveled by each wheel
-        self.robot_frame = {'x': 0, 'y': 0, 'theta': np.pi/2} # (x,y) translation and orientation of robot in its frame
+        #self.robot_frame = {'x': 0, 'y': 0, 'theta': np.pi/2} # (x,y) translation and orientation of robot in its frame
+        self.robot_frame = {'x': 0, 'y': 0, 'theta': 0} # (x,y) translation and orientation of robot in its frame
         self.global_frame = {'x': 0, 'y': 0, 'theta': 0} # (x,y) translation and orientation of robot in world frame 
+
+        self.dir = {'left': 0, 'right': 0} # direction we are currently moving in
 
         # -- Subscribers -- 
         self.sub_encoder_ticks_left = rospy.Subscriber(
@@ -62,6 +65,11 @@ class BasicMovemenNode(DTROS):
         self.led = rospy.Publisher(
             f'/{self.veh_name}/led_emitter_node/led_pattern',
             LEDPattern,
+            queue_size=1
+        )
+        self.pub_twist = rospy.Publisher(
+            f'/{self.veh_name}/car_cmd_switch_node/cmd', 
+            Twist2DStamped, 
             queue_size=1
         )
 
@@ -96,15 +104,15 @@ class BasicMovemenNode(DTROS):
         diff_value = msg.data - self.prev_values[wheel]
         self.prev_values[wheel] = msg.data
 
-        rospy.loginfo(wheel + ' tick ' + str(msg.data))
+        #rospy.loginfo(wheel + ' tick ' + str(msg.data))
 
         # caluclates the distance travled
         dist = 2 * np.pi * self._radius * diff_value / msg.resolution
 
         # update distance travled 
-        self.d[wheel] = dist
+        self.d[wheel] = dist * self.dir[wheel]
         self.traveled_distance[wheel] += dist
-        rospy.loginfo(wheel+ ' d ' + str(self.traveled_distance[wheel]))
+        #rospy.loginfo(wheel+ ' d ' + str(self.traveled_distance[wheel]))
 
 
         # updating the robot frame coordinates & the world frame coordinates
@@ -125,8 +133,15 @@ class BasicMovemenNode(DTROS):
             vel_left: left wheel velocity
             vel_right: right wheel velocity
         '''
-        header = Header()
+        if (vel_left > 0): self.dir['left'] = 1
+        elif (vel_left < 0): self.dir['left'] = -1
+        else: self.dir['left'] = 0 
 
+        if (vel_right > 0): self.dir['right'] = 1
+        elif (vel_right < 0): self.dir['right'] = -1
+        else: self.dir['right'] = 0 
+
+        header = Header()
         self.pub_wheel_commands.publish(
             WheelsCmdStamped(
                 header=header,
@@ -186,6 +201,7 @@ class BasicMovemenNode(DTROS):
                 rate.sleep()
 
 
+
     def forward(self, rate: rospy.Rate, desired_distance: float, vel_left: int = 0.43, vel_right: int = 0.42):
         '''
         Going forward by the specified distance & speed 
@@ -230,13 +246,13 @@ class BasicMovemenNode(DTROS):
         Updating the robot frame coordinates and the world coordinates then write them in a bag
         '''
         # update robot frame
-        delta_theta = (self.d['right'] - self.d['left']) / self._baseline
+        delta_theta = (self.d['right'] - self.d['left']) / (self._baseline)
         delta_A = (self.d['left'] + self.d['right']) / 2
         delta_x = delta_A * np.cos(self.robot_frame['theta'])
         delta_y = delta_A * np.sin(self.robot_frame['theta'])
 
         self.robot_frame['x'] += delta_x
-        self.robot_frame['y'] += delta_y
+        #self.robot_frame['y'] += delta_y
         self.robot_frame['theta'] = (
             self.robot_frame['theta'] + delta_theta) % (2 * np.pi)
         
@@ -244,7 +260,7 @@ class BasicMovemenNode(DTROS):
         robot_frame_vec = np.array([[self.robot_frame['x']], [self.robot_frame['y']], [1]])
         global_frame_vec = np.array([[0, -1, -0.32],[1, 0, -0.32],[0, 0, 1]])*robot_frame_vec
         global_frame_vec[2] = self.robot_frame['theta'] - np.pi/2
-
+        self.log(self.robot_frame)
         self.global_frame['x'] = global_frame_vec[0]
         self.global_frame['y'] = global_frame_vec[1]
         self.global_frame['theta'] = global_frame_vec[2]
@@ -257,6 +273,7 @@ class BasicMovemenNode(DTROS):
         '''
         Writing in the bag the x and y coordinates of the robot.
         '''
+        #print(self.global_frame['x'], self.global_frame['y'], self.global_frame['theta'])
         try:
             x = Float64()
             x.data = self.global_frame['x']
@@ -294,22 +311,23 @@ class BasicMovemenNode(DTROS):
         # turning clockwise
         #dis_rot_distance = np.pi * self._baseline / 2
 
-        correction_factor = np.deg2rad(20)
+        correction_factor = np.deg2rad(30)
         dis_rot_distance = ((2*np.pi-correction_factor*4)*self._baseline/2) / 4
 
         self.rotate(rate, dis_rot_distance, vel_left=0.45, vel_right=-0.45)
+        self.stop(0.2)
 
         # TODO: does removing stop() mess up with the travelling
-        self.stop()
+        #self.stop()
 
         # move forward
-        # self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
-        # self.stop()
+        self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
+        self.stop(0.2)
 
         # turning counter-clockwise
-        # self.rotate(rate, dis_rot_distance, vel_left=0,
-        #             vel_right=0.4, clockwise=False)
-        # self.stop()
+        self.rotate(rate, dis_rot_distance, vel_left=0.45,
+                    vel_right=-0.45, clockwise=False)
+        self.stop(0.2)
 
         # move forward
         # self.forward(rate, self.desired_distance, vel_left=0.4, vel_right=0.42)
@@ -337,6 +355,16 @@ class BasicMovemenNode(DTROS):
 
         # TODO: clockwise circular movement
 
+    # https://docs.duckietown.org/daffy/duckietown-robotics-development/out/new_duckiebot_functionality.html
+    def on_shutdown(self):
+        """Shutdown procedure.
+        Publishes a zero velocity command at shutdown."""
+        try:
+            for i in range(15):
+                self.stop()
+        except:
+            super(BasicMovemenNode, self).on_shutdown()
+
 
 if __name__ == '__main__':
     node = BasicMovemenNode(node_name='basic_movement_node')
@@ -345,7 +373,7 @@ if __name__ == '__main__':
     # Plotting the rosbag data
     #node.read_from_bag()
 
-    rospy.spin()
+    #rospy.spin()
     node.bag.close()
 
     rospy.signal_shutdown('Duckiebot quacks goodbye!')
