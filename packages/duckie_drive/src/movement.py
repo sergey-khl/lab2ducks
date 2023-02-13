@@ -123,7 +123,7 @@ class OdometryNode(DTROS):
         dA = (self.dx_left + self.dx_right)/2
         
 
-        if self.ang_remain > 0:
+        if self.ang_remain != 0:
             self.ang_remain -= np.abs((self.dx_right - self.dx_left)/(2*self._length))
 
 
@@ -133,8 +133,11 @@ class OdometryNode(DTROS):
         self.robot_frame['theta'] += (self.dx_right - self.dx_left)/(2*self._length)
         self.robot_frame['theta'] %= 2*np.pi
 
-        if self.dist_remain > 0:
-            self.dist_remain -= self.dx_right
+        if self.dist_remain != 0:
+            self.dist_remain -= np.abs(dA)
+
+        # update global coordinates
+        self.initial_to_global()
 
         # recording in the rosbag
         self.write_in_bag()
@@ -165,15 +168,17 @@ class OdometryNode(DTROS):
 
 
     def run(self, rate):
-        self.change_led_lights('pink')
+        start = time.time()
 
         while not self.is_shutdown:
-            #self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
-            self.log(str(self.global_frame['x']) + "   " + str(self.global_frame['y']) + "   " + str(self.global_frame['theta']))
+            self.log(str(self.robot_frame['x']) + "   " + str(self.robot_frame['y']) + "   " + str(self.robot_frame['theta']))
+            #self.log(str(self.global_frame['x']) + "   " + str(self.global_frame['y']) + "   " + str(self.global_frame['theta']))
             #wait 
             if (self.stage == 0):
+                
                 self.change_led_lights('cyan')
                 self.stop_being_silly(1, 1/5)
+                #self.rotate(-1, 'cw')
             # box movement
             elif (self.stage == 1):
                 self.change_led_lights('green')
@@ -217,7 +222,15 @@ class OdometryNode(DTROS):
                 self.left_dir = 1
                 self.right_dir = 1
                 self.go_circle(14)
+
+            else:
+                end = time.time()
+                self.log('total execution time: ' + str(end-start))
+                self.read_from_bag()
+
+                return
             rate.sleep()
+        
             
 
     def write_in_bag(self):
@@ -226,24 +239,21 @@ class OdometryNode(DTROS):
         '''
         try:
             x = Float64()
-            x.data = self.robot_frame['x']
-            y = Float64()
-            y.data = self.robot_frame['y']
-
-            self.bag.write('robot_frameX', x)
-            self.bag.write('robot_frameY', y)
-            x = Float64()
             x.data = self.global_frame['x']
             y = Float64()
             y.data = self.global_frame['y']
+            theta = Float64()
+            theta.data = self.global_frame['theta']
 
-            self.bag.write('global_frameX', x)
-            self.bag.write('global_frameY', y)
+            self.bag.write('x', x)
+            self.bag.write('y', y)
+            self.bag.write('theta', theta)
         except Exception as e:
             print(f'This is the error message for bag: {e}')
             self.bag.close()
 
     def move (self, v, omega):
+        # move using twist by sending velocity and omega
         twist = Twist2DStamped()
         twist.v = v
         twist.omega = omega
@@ -255,20 +265,13 @@ class OdometryNode(DTROS):
         self.log('going forward')
         if (self.dist_remain == 0):
             self.dist_remain = 1.25
-        if (self.dist_remain >= -0.1 and self.dist_remain <= 0.2):
+        if (self.dist_remain <= 0.2):
             self.stage = next_stage
             self.move(0, 0)
             self.dist_remain = 0
             self.log('done moving forward')
         else:
-            if (self.robot_frame['theta'] >  0.01):
-                self.log('too right')
-                self.move(0.4, -1)
-            elif (self.robot_frame['theta'] < -0.01):
-                self.log('too left')
-                self.move(0.4, 0.8)
-            else:
-                self.move(0.4, 0)
+            self.move(0.35, 0.5)
 
 
 
@@ -291,21 +294,21 @@ class OdometryNode(DTROS):
     def correct(self, ang, dir):
         speed = np.sign(ang)*dir*9
         self.move(0, speed)
-        hz = np.clip([int(1/np.abs(ang))], 2, 10)
+        hz = np.clip([int(1/np.abs(ang))], 5, 20)
         rate = rospy.Rate(hz[0])
         rate.sleep()
         
 
     def rotate(self, next_stage, dir):
         self.log('start rotate')
-
-        self.log(self.ang_remain)
         if (self.ang_remain == 0):
             self.ang_remain = np.pi/2
-        if (self.ang_remain <= 0.3):
-            self.stop_being_silly(next_stage, 10)
-            self.correct(self.ang_remain, 1) if dir == 'ccw' else self.correct(self.ang_remain, -1)
-            self.ang_remain = 0
+        if (self.ang_remain <= 0.5):
+            while (np.abs(self.ang_remain) > 0.05):
+                self.stop_being_silly(next_stage, 5)
+                self.correct(self.ang_remain, 1) if dir == 'ccw' else self.correct(self.ang_remain, -1)
+                self.stop_being_silly(next_stage, 5)
+                self.ang_remain = 0
             self.log('done rotating')
         else:
             if (dir == 'ccw'):
@@ -321,7 +324,7 @@ class OdometryNode(DTROS):
             self.dist_remain = 2*np.pi*0.3
         if (self.dist_remain >= -0.1 and self.dist_remain <= 0.2):
             self.stage = next_stage
-            self.move(0, 0)
+            self.stop_being_silly(next_stage, 10)
             self.dist_remain = 0
             self.log('done with circle')
         else:
@@ -338,9 +341,16 @@ class OdometryNode(DTROS):
         self.global_frame['theta'] = global_frame_angle
         
     def read_from_bag(self):
-        for topic, msg, t in self.bag.read_messages(topics=['x', 'y']):
-            print('Rosbag data:', topic, msg, t)
-        self.bag.close()
+        try:
+            for topic, msg, t in self.bag.read_messages(topics=['x', 'y', 'theta']):
+                print('Rosbag data:', topic, msg, t)
+            
+        except Exception as e:
+            print(e)
+            
+            self.log('done reading bag')
+
+    
 
     # https://docs.duckietown.org/daffy/duckietown-robotics-development/out/new_duckiebot_functionality.html
     def on_shutdown(self):
@@ -348,11 +358,16 @@ class OdometryNode(DTROS):
         Publishes a zero velocity command at shutdown."""
         try:
             for i in range(15):
-                self.change_led_lights('off')
+                
                 self.move(0, 0)
-        except:
-            self.EMERGENCY_STOPPED = True
+            
+        except Exception as e:
+            print(e)
+            
             super(OdometryNode, self).on_shutdown()
+        self.read_from_bag()
+        self.bag.close()
+        
         
         
 
@@ -360,17 +375,7 @@ if __name__ == '__main__':
     node = OdometryNode(node_name='my_odometry_node')
     rate = rospy.Rate(30)
     node.run(rate)
-
-
     node.read_from_bag()
+
     node.bag.close()
-
-    #rospy.spin()
-
-    # # Keep it spinning to keep the node alive
     
-    # #rospy.spin()
-    # try:
-    #     node.run(rate)
-    # except rospy.ROSInterruptException:
-    #     pass

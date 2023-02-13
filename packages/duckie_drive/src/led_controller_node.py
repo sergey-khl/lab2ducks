@@ -4,6 +4,7 @@ import rospy
 from duckietown_msgs.srv import SetCustomLEDPattern, ChangePattern, ChangePatternResponse
 from duckietown_msgs.msg import LEDPattern
 from duckietown.dtros import DTROS, NodeType, TopicType
+from std_msgs.msg import String
 
 # References:   https://github.com/duckietown/dt-core/blob/6d8e99a5849737f86cab72b04fd2b449528226be/packages/led_emitter/src/led_emitter_node.py#L254
 #               https://github.com/anna-ssi/mobile-robotics/blob/50d0b24eab13eb32d92fa83273a05564ca4dd8ef/assignment2/src/led_node.py
@@ -76,7 +77,6 @@ class LEDNode(DTROS):
         self.setCustomPattern(new_msg)
 
         return ChangePatternResponse()
-
 
 
 if __name__ == "__main__":
